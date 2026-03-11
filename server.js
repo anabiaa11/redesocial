@@ -76,3 +76,17 @@ app.put("/usuarios/:id", async (req, res) => {
 app.listen(3000, () => {
     console.log("Servidor rodando na porta 3000")
 })
+// =========================
+// LOGIN USUÁRIO
+// =========================
+app.post("/login", async (req, res) => {
+    const { nome, senha } = req.body
+
+    const usuario = await Usuario.findOne({ nome: nome, senha: senha })
+
+    if (!usuario) {
+        return res.status(401).json({ erro: "Usuário ou senha inválidos" })
+    }
+
+    res.json({ sucesso: true, usuario })
+})
