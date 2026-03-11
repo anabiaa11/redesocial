@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SENAI Connect</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔗</text></svg>">
+</head>
+<body>
+
+  <!-- ===== LOADER ===== -->
+  <div class="page-loader" id="pageLoader">
+    <div class="loader-logo">SENAI<span>Connect</span></div>
+    <div class="loader-bar"><div class="loader-progress"></div></div>
+  </div>
+
+  <!-- ===== TOAST CONTAINER ===== -->
+  <div class="toast-container" id="toastContainer"></div>
+
+  <!-- ===========================
+       AUTH PAGE
+       =========================== -->
+  <div class="auth-page" id="authPage">
+    <!-- Brand Side -->
+    <div class="auth-brand">
+      <div class="brand-logo">SENAI<span>Connect</span></div>
+      <p class="brand-tagline">A rede social dos alunos e profissionais SENAI</p>
+      <div class="brand-features">
+        <div class="brand-feature">
+          <div class="brand-feature-icon">🎓</div>
+          <span>Conecte-se com alunos e professores</span>
+        </div>
+        <div class="brand-feature">
+          <div class="brand-feature-icon">💼</div>
+          <span>Compartilhe projetos e conquistas</span>
+        </div>
+        <div class="brand-feature">
+          <div class="brand-feature-icon">🚀</div>
+          <span>Impulsione sua carreira profissional</span>
+        </div>
+        <div class="brand-feature">
+          <div class="brand-feature-icon">🤝</div>
+          <span>Encontre oportunidades de emprego</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Form Side -->
+    <div class="auth-form-side">
+      <div class="auth-form-box">
+
+        <!-- LOGIN TAB -->
+        <div id="loginTab" class="auth-tab-content active">
+          <h2>Bem-vindo de volta!</h2>
+          <p class="subtitle">Entre na sua conta SENAI Connect</p>
+          <form id="loginForm">
+            <div class="form-group">
+              <label>Nome de usuário</label>
+              <input type="text" id="loginName" placeholder="Seu nome completo" required>
+            </div>
+            <div class="form-group">
+              <label>Senha</label>
+              <div class="input-group">
+                <input type="password" id="loginPass" placeholder="Sua senha" required>
+                <span class="input-icon toggle-pass">👁️</span>
+              </div>
+            </div>
+            <button type="submit" class="btn-primary">Entrar</button>
+          </form>
+          <p class="auth-switch">
+            Não tem conta? <a data-switch-auth="register">Cadastre-se grátis</a>
+          </p>
+          <p style="margin-top:12px;text-align:center;font-size:13px;color:var(--gray-mid)">
+            💡 Dica: Crie uma conta primeiro para entrar!
+          </p>
+        </div>
+
+        <!-- REGISTER TAB -->
+        <div id="registerTab" class="auth-tab-content" style="display:none">
+          <h2>Criar conta</h2>
+          <p class="subtitle">Junte-se à comunidade SENAI Connect</p>
+          <form id="registerForm">
+            <div class="form-group">
+              <label>Nome completo</label>
+              <input type="text" id="regName" placeholder="Seu nome" required>
+            </div>
+            <div class="form-group">
+              <label>E-mail institucional</label>
+              <input type="email" id="regEmail" placeholder="seunome@senai.br" required>
+            </div>
+            <div class="form-group">
+              <label>Curso</label>
+              <select id="regCourse" style="width:100%;background:var(--dark-3);border:1.5px solid var(--dark-4);border-radius:var(--radius-sm);padding:13px 16px;color:var(--white);font-size:15px;outline:none;appearance:none;cursor:pointer">
+                <option value="" disabled selected>Selecione seu curso</option>
+                <option>Análise e Desenvolvimento de Sistemas</option>
+                <option>Design Gráfico</option>
+                <option>Mecatrônica</option>
+                <option>Eletrotécnica</option>
+                <option>Gastronomia</option>
+                <option>Enfermagem</option>
+                <option>Redes de Computadores</option>
+                <option>Edificações</option>
+                <option>Segurança do Trabalho</option>
+                <option>Administração</option>
+                <option>Mecânica Automotiva</option>
+                <option>Publicidade e Marketing</option>
+              </select>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label>Senha</label>
+                <div class="input-group">
+                  <input type="password" id="regPass" placeholder="Mín. 6 caracteres" required>
+                  <span class="input-icon toggle-pass">👁️</span>
+                </div>
+              </div>
+              <div class="form-group">
+                <label>Confirmar senha</label>
+                <div class="input-group">
+                  <input type="password" id="regPass2" placeholder="Repita a senha" required>
+                  <span class="input-icon toggle-pass">👁️</span>
+                </div>
+              </div>
+            </div>
+            <button type="submit" class="btn-primary">Criar conta grátis</button>
+          </form>
+          <p class="auth-switch">
+            Já tem conta? <a data-switch-auth="login">Entrar</a>
+          </p>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- ===========================
+       APP LAYOUT
+       =========================== -->
+  <div class="app-layout" id="appLayout">
+
+    <!-- HEADER -->
+    <header class="app-header">
+      <div class="header-logo" data-page="feed">SENAI<span>Connect</span></div>
+      <div class="header-search">
+        <span class="search-icon">🔍</span>
+        <input type="text" id="headerSearch" placeholder="Buscar alunos, cursos, projetos...">
+      </div>
+      <div class="header-actions">
+        <button class="header-icon-btn" id="headerMsgBtn" title="Mensagens">
+          💬
+          <span class="badge" id="msgBadge">3</span>
+        </button>
+        <button class="header-icon-btn" id="headerNotifBtn" title="Notificações">
+          🔔
+          <span class="badge" id="notifBadge">3</span>
+        </button>
+        <div class="header-avatar" id="headerAvatar" data-page="perfil" onclick="navigateTo('perfil')">
+          <span style="display:flex;align-items:center;justify-content:center;width:100%;height:100%;font-size:18px">😊</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- SIDEBAR LEFT -->
+    <aside class="sidebar-left">
+      <div id="sidebarUserInfo"></div>
+      <div class="sidebar-section-title">Menu</div>
+      <nav>
+        <div class="nav-item active" data-page="feed">
+          <span class="nav-icon">🏠</span> Feed
+        </div>
+        <div class="nav-item" data-page="explorar">
+          <span class="nav-icon">🔍</span> Explorar
+        </div>
+        <div class="nav-item" data-page="notificacoes">
+          <span class="nav-icon">🔔</span> Notificações
+          <span class="nav-badge" id="navNotifBadge">3</span>
+        </div>
+        <div class="nav-item" data-page="mensagens">
+          <span class="nav-icon">💬</span> Mensagens
+          <span class="nav-badge">3</span>
+        </div>
+        <div class="nav-item" data-page="perfil">
+          <span class="nav-icon">👤</span> Perfil
+        </div>
+      </nav>
+      <div class="sidebar-divider"></div>
+      <div class="sidebar-section-title">Comunidade</div>
+      <div class="nav-item" onclick="showToast('Grupos SENAI — em breve! 👥', 'info')">
+        <span class="nav-icon">👥</span> Grupos
+      </div>
+      <div class="nav-item" onclick="showToast('Eventos SENAI — em breve! 📅', 'info')">
+        <span class="nav-icon">📅</span> Eventos
+      </div>
+      <div class="nav-item" onclick="showToast('Vagas de emprego — em breve! 💼', 'info')">
+        <span class="nav-icon">💼</span> Vagas
+      </div>
+      <div class="nav-item" onclick="showToast('Projetos SENAI — em breve! 📂', 'info')">
+        <span class="nav-icon">📂</span> Projetos
+      </div>
+      <div class="sidebar-divider"></div>
+      <div class="nav-item" onclick="logout()" style="color:var(--red)">
+        <span class="nav-icon">🚪</span> Sair
+      </div>
+    </aside>
+
+    <!-- MAIN CONTENT -->
+    <main class="main-content">
+
+      <!-- ===== FEED PAGE ===== -->
+      <div class="feed-page page active" id="page-feed">
+        <!-- Stories -->
+        <div class="stories-row" id="storiesWrap"></div>
+        <!-- Create Post -->
+        <div class="create-post-card">
+          <div class="create-post-top">
+            <div class="create-post-avatar">
+              <span style="display:flex;align-items:center;justify-content:center;width:100%;height:100%;font-size:20px;background:var(--dark-3)">😊</span>
+            </div>
+            <textarea class="create-post-input" id="feedPostInput" placeholder="O que está acontecendo no SENAI?" rows="1"></textarea>
+          </div>
+          <div class="create-post-actions">
+            <button class="post-action-btn" onclick="openNewPost()">📷 Foto</button>
+            <button class="post-action-btn" onclick="openNewPost()">🎬 Vídeo</button>
+            <button class="post-action-btn" onclick="openNewPost()">📊 Enquete</button>
+            <button class="post-action-btn submit-post" onclick="openNewPost()">Publicar</button>
+          </div>
+        </div>
+        <!-- Posts Feed -->
+        <div id="postsFeed"></div>
+      </div>
+
+      <!-- ===== EXPLORAR PAGE ===== -->
+      <div class="explore-page page" id="page-explorar">
+        <div class="page-header">
+          <h1 class="page-title">Explorar 🔍</h1>
+          <p class="page-subtitle">Descubra conteúdos, cursos e pessoas incríveis do SENAI</p>
+        </div>
+        <div class="explore-grid" id="exploreGrid"></div>
+      </div>
+
+      <!-- ===== NOTIFICAÇÕES PAGE ===== -->
+      <div class="notifications-page page" id="page-notificacoes">
+        <div class="page-header" style="display:flex;align-items:center;justify-content:space-between">
+          <div>
+            <h1 class="page-title">Notificações 🔔</h1>
+            <p class="page-subtitle">Suas atividades recentes</p>
+          </div>
+          <button onclick="markAllRead()" style="background:var(--dark-3);border:1px solid var(--dark-4);color:var(--gray-light);padding:8px 16px;border-radius:var(--radius-full);font-size:13px;cursor:pointer">Marcar todas como lidas</button>
+        </div>
+        <div id="notifContainer"></div>
+      </div>
+
+      <!-- ===== MENSAGENS PAGE ===== -->
+      <div class="messages-page page" id="page-mensagens">
+        <div class="messages-list">
+          <div class="messages-list-header">💬 Mensagens</div>
+          <div id="messagesList"></div>
+        </div>
+        <div class="chat-window">
+          <div class="chat-header" id="chatHeader">
+            <div style="color:var(--gray-mid);font-size:14px;padding:8px">Selecione uma conversa para começar</div>
+          </div>
+          <div class="chat-messages" id="chatMessagesContainer">
+            <div class="empty-state">
+              <div class="empty-state-icon">💬</div>
+              <h3>Nenhuma conversa selecionada</h3>
+              <p>Escolha um contato à esquerda</p>
+            </div>
+          </div>
+          <div class="chat-input-bar">
+            <button class="post-action-btn" onclick="showToast('Emoji — em breve! 😊', 'info')" style="flex-shrink:0">😊</button>
+            <input type="text" class="chat-input" id="chatInput" placeholder="Digite uma mensagem...">
+            <button class="post-action-btn" onclick="showToast('Anexo — em breve! 📎', 'info')" style="flex-shrink:0">📎</button>
+            <button class="chat-send-btn" onclick="sendMessage()">➤</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== PERFIL PAGE ===== -->
+      <div class="profile-page page" id="page-perfil">
+        <div class="profile-cover">
+          <div style="width:100%;height:100%;background:linear-gradient(135deg,#b80f20,#1a1a1a,#E8192C);display:flex;align-items:center;justify-content:center;font-size:80px;opacity:0.3">🎓</div>
+          <div class="profile-avatar-wrap">
+            <span style="font-size:40px">😊</span>
+          </div>
+        </div>
+        <div class="profile-info-bar">
+          <div class="profile-details">
+            <div class="profile-name" id="profileName">Carregando...</div>
+            <div class="profile-handle" id="profileHandle">@usuario</div>
+            <div class="profile-bio" id="profileBio">Aluno SENAI</div>
+            <div class="profile-tags">
+              <span class="profile-tag" id="profileCourse">Curso</span>
+              <span class="profile-tag">SENAI</span>
+              <span class="profile-tag">Estudante</span>
+            </div>
+            <div class="profile-stats">
+              <div class="profile-stat">
+                <div class="stat-num" id="profilePostsCount">0</div>
+                <div class="stat-label">Posts</div>
+              </div>
+              <div class="profile-stat">
+                <div class="stat-num" id="profileFollowers">0</div>
+                <div class="stat-label">Seguidores</div>
+              </div>
+              <div class="profile-stat">
+                <div class="stat-num" id="profileFollowing">0</div>
+                <div class="stat-label">Seguindo</div>
+              </div>
+            </div>
+          </div>
+          <div class="profile-actions">
+            <button class="btn-primary" style="width:auto;padding:10px 22px" onclick="openEditProfile()">✏️ Editar Perfil</button>
+            <button class="btn-outline" onclick="showToast('Configurações — em breve! ⚙️', 'info')">⚙️</button>
+          </div>
+        </div>
+        <div class="profile-tabs">
+          <div class="profile-tab active" data-tab="posts" onclick="switchProfileTab('posts')">📝 Posts</div>
+          <div class="profile-tab" data-tab="salvos" onclick="switchProfileTab('salvos')">🔖 Salvos</div>
+          <div class="profile-tab" data-tab="curtidos" onclick="switchProfileTab('curtidos')">❤️ Curtidos</div>
+          <div class="profile-tab" data-tab="projetos" onclick="switchProfileTab('projetos')">📂 Projetos</div>
+        </div>
+        <div class="posts-grid" id="profileGrid"></div>
+      </div>
+
+    </main>
+
+    <!-- SIDEBAR RIGHT -->
+    <aside class="sidebar-right">
+      <!-- Trending -->
+      <div class="trending-card widget-card">
+        <div class="widget-title">🔥 Em Alta</div>
+        <div id="trendingList"></div>
+      </div>
+      <!-- Sugestões -->
+      <div class="suggestions-card widget-card">
+        <div class="widget-title">👤 Sugestões para você</div>
+        <div id="suggestionsList"></div>
+      </div>
+      <!-- Widget Info -->
+      <div class="widget-card" style="font-size:13px;color:var(--gray-mid);text-align:center">
+        <div style="font-size:18px;margin-bottom:6px">🏫</div>
+        <strong style="color:var(--white)">SENAI Connect</strong><br>
+        A rede da indústria brasileira<br>
+        <span style="color:var(--red)">© 2026 SENAI</span>
+      </div>
+    </aside>
+
+  </div>
+
+  <!-- MOBILE NAVIGATION -->
+  <nav class="mobile-nav" id="mobileNav">
+    <div class="mobile-nav-inner">
+      <button class="mobile-nav-btn active" data-page="feed">
+        <span class="nav-icon">🏠</span>
+        Feed
+      </button>
+      <button class="mobile-nav-btn" data-page="explorar">
+        <span class="nav-icon">🔍</span>
+        Explorar
+      </button>
+      <button class="mobile-nav-btn" onclick="openNewPost()">
+        <span class="nav-icon" style="font-size:28px;background:var(--red);border-radius:50%;width:40px;height:40px;display:flex;align-items:center;justify-content:center">+</span>
+      </button>
+      <button class="mobile-nav-btn" data-page="notificacoes">
+        <span class="nav-icon">🔔</span>
+        Notif.
+      </button>
+      <button class="mobile-nav-btn" data-page="perfil">
+        <span class="nav-icon">👤</span>
+        Perfil
+      </button>
+    </div>
+  </nav>
+
+  <!-- ===========================
+       MODALS
+       =========================== -->
+
+  <!-- New Post Modal -->
+  <div class="modal-overlay" id="newPostModal">
+    <div class="modal">
+      <div class="modal-header">
+        <h3 class="modal-title">✍️ Nova publicação</h3>
+        <button class="modal-close" onclick="closeModal('newPostModal')">✕</button>
+      </div>
+      <textarea id="newPostText" placeholder="O que você quer compartilhar com a comunidade SENAI?"></textarea>
+      <div class="modal-post-options">
+        <button class="modal-opt-btn" onclick="showToast('Upload de foto — em breve! 📷', 'info')">📷 Foto</button>
+        <button class="modal-opt-btn" onclick="showToast('Upload de vídeo — em breve! 🎬', 'info')">🎬 Vídeo</button>
+        <button class="modal-opt-btn" onclick="showToast('Criar enquete — em breve! 📊', 'info')">📊 Enquete</button>
+        <button class="modal-opt-btn" onclick="showToast('Adicionar localização — em breve! 📍', 'info')">📍 Local</button>
+      </div>
+      <button class="modal-post-btn" onclick="submitNewPost()">🚀 Publicar agora</button>
+    </div>
+  </div>
+
+  <!-- Generic Modal (comments, edit, etc) -->
+  <div class="modal-overlay" id="genericModal">
+    <div class="modal">
+      <div class="modal-header">
+        <h3 class="modal-title" id="genericModalTitle">Modal</h3>
+        <button class="modal-close" onclick="closeModal('genericModal')">✕</button>
+      </div>
+      <div id="genericModalBody"></div>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
