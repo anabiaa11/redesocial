@@ -2,89 +2,134 @@
 
 Projeto desenvolvido por **Felipe Zamora** e **Ana Beatriz**.
 
-## 📌 Sobre o Projeto
+---
 
-O **SENAI Connect** é uma aplicação web que simula uma rede social voltada para alunos e profissionais do SENAI.
-A plataforma permite o cadastro e gerenciamento de usuários, possibilitando conexões entre estudantes, compartilhamento de projetos e oportunidades profissionais.
+# 📌 Sobre o Projeto
 
-O sistema possui uma interface web com **HTML, CSS e JavaScript**, e um **backend em Node.js com Express**, conectado a um banco de dados **MongoDB**.
+O **SENAI Connect** é uma aplicação web que simula uma **rede social voltada para alunos do SENAI**, permitindo o cadastro e gerenciamento de usuários em um banco de dados.
+
+O objetivo do projeto é praticar conceitos de:
+
+* Desenvolvimento **Front-end**
+* Criação de **API com Node.js**
+* Integração com **MongoDB**
+* Estruturação de projetos web
+
+A aplicação possui uma interface simples desenvolvida em **HTML, CSS e JavaScript**, que se comunica com um **servidor Node.js** responsável por realizar as operações no banco de dados **MongoDB**.
 
 ---
 
-## 🚀 Tecnologias Utilizadas
+# 🚀 Tecnologias Utilizadas
 
-**Front-end**
+### Front-end
 
 * HTML5
 * CSS3
 * JavaScript
 
-**Back-end**
+### Back-end
 
 * Node.js
-* Express
+* Express.js
 
-**Banco de Dados**
+### Banco de Dados
 
-* MongoDB
+* MongoDB Atlas
 * Mongoose
 
-**Outras bibliotecas**
+### Outras dependências
 
 * CORS
 
 ---
 
-## 📂 Estrutura do Projeto
+# 📂 Estrutura do Projeto
 
 ```
-/projeto
+projeto/
 │
-├── index.html      # Estrutura da interface da aplicação
-├── style.css       # Estilização da aplicação
-├── script.js       # Lógica da interface
-├── server.js       # Servidor Node.js e API
-└── README.md       # Documentação do projeto
+├── index.html        # Estrutura da página web
+├── style.css         # Estilização da interface
+├── script.js         # Lógica da interface e requisições
+├── server.js         # Servidor da aplicação e rotas da API
+│
+├── mongo/
+│   └── db.js         # Arquivo responsável pela conexão com o MongoDB
+│
+└── README.md         # Documentação do projeto
 ```
 
 ---
 
-## ⚙️ Funcionalidades
+# 🗄️ Conexão com o Banco de Dados
 
-O sistema possui uma API simples para gerenciamento de usuários.
+A conexão com o **MongoDB Atlas** é feita utilizando a biblioteca **Mongoose**.
 
-### Criar usuário
+O arquivo responsável por essa conexão é:
+
+```
+mongo/db.js
+```
+
+Exemplo da conexão utilizada no projeto:
+
+```javascript
+const mongoose = require("mongoose")
+
+mongoose.connect("mongodb+srv://usuario:senha@cluster.mongodb.net")
+
+.then(() => {
+    console.log("MongoDB conectado com sucesso!")
+})
+.catch((err) => {
+    console.log("Erro ao conectar:", err)
+})
+```
+
+Esse arquivo é importado pelo servidor para permitir que a aplicação utilize o banco de dados.
+
+---
+
+# ⚙️ Funcionalidades da API
+
+A aplicação possui rotas que permitem realizar operações básicas com os usuários cadastrados.
+
+## Criar usuário
 
 `POST /usuarios`
 
 Cria um novo usuário no banco de dados.
 
-Campos enviados:
+Exemplo de dados enviados:
 
-* nome
-* email
-* curso
-* senha
+```
+{
+  "nome": "felipe",
+  "email": "felipe@email.com",
+  "curso": "Desenvolvimento de Sistemas",
+  "senha": "123456"
+}
+```
 
 ---
 
-### Listar usuários
+## Listar usuários
 
 `GET /usuarios`
 
-Retorna todos os usuários cadastrados.
+Retorna todos os usuários cadastrados no banco.
 
 ---
 
-### Atualizar usuário
+## Atualizar usuário
 
 `PUT /usuarios/:id`
 
-Atualiza os dados de um usuário existente.
+Atualiza as informações de um usuário específico.
 
 ---
 
-### Deletar usuário
+## Deletar usuário
 
 `DELETE /usuarios/:id`
 
@@ -92,26 +137,25 @@ Remove um usuário do banco de dados.
 
 ---
 
-## 🗄️ Modelo de Usuário
+# ▶️ Como Executar o Projeto
 
-O banco de dados utiliza o seguinte modelo:
+## 1️⃣ Clonar o repositório
 
 ```
-Usuario {
-  nome: String
-  email: String
-  curso: String
-  senha: String
-}
+git clone https://github.com/seu-repositorio/projeto.git
 ```
 
 ---
 
-## ▶️ Como executar o projeto
+## 2️⃣ Instalar as dependências
 
-### 1️⃣ Instalar as dependências
+Dentro da pasta do projeto execute:
 
-No terminal, dentro da pasta do projeto:
+```
+npm install
+```
+
+Ou instale manualmente:
 
 ```
 npm install express mongoose cors
@@ -119,13 +163,13 @@ npm install express mongoose cors
 
 ---
 
-### 2️⃣ Executar o servidor
+## 3️⃣ Iniciar o servidor
 
 ```
 node server.js
 ```
 
-O servidor será iniciado em:
+O servidor iniciará em:
 
 ```
 http://localhost:3000
@@ -133,7 +177,7 @@ http://localhost:3000
 
 ---
 
-### 3️⃣ Abrir o site
+## 4️⃣ Abrir o projeto
 
 Abra o arquivo:
 
@@ -141,22 +185,22 @@ Abra o arquivo:
 index.html
 ```
 
-no navegador.
+no navegador para acessar a interface da aplicação.
 
 ---
 
-## 👥 Integrantes do Grupo
+# 👥 Integrantes do Grupo
 
 * **Felipe Zamora**
 * **Ana Beatriz**
 
 ---
 
-## 🎓 Projeto Acadêmico
+# 🎓 Projeto Acadêmico
 
-Projeto desenvolvido para atividades do **SENAI**, com objetivo de praticar:
+Projeto desenvolvido como atividade acadêmica no **SENAI**, com o objetivo de praticar:
 
-* Desenvolvimento web
+* Desenvolvimento Web
 * Criação de APIs
-* Integração com banco de dados
+* Integração com Banco de Dados
 * Uso de Node.js e MongoDB
