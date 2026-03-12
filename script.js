@@ -19,14 +19,14 @@ const App = {
 // USUÁRIOS FICTÍCIOS
 // =====================
 const FAKE_USERS = [
-  { id: 2, name: 'Ana Beatriz', handle: '@anabeatriz', avatar: '👩‍💻', course: 'Análise e Desenvolvimento', followers: 1240, following: 340, verified: true },
-  { id: 3, name: 'Carlos Silva', handle: '@carlossilva', avatar: '👨‍🔧', course: 'Mecatrônica', followers: 890, following: 220, verified: false },
-  { id: 4, name: 'Marina Costa', handle: '@marinacosta', avatar: '🎨', course: 'Design Gráfico', followers: 2100, following: 180, verified: true },
-  { id: 5, name: 'Pedro Alves', handle: '@pedroalves', avatar: '⚡', course: 'Eletrotécnica', followers: 560, following: 410, verified: false },
-  { id: 6, name: 'Julia Mendes', handle: '@juliamendes', avatar: '🧑‍🍳', course: 'Gastronomia', followers: 3400, following: 250, verified: true },
-  { id: 7, name: 'Rafael Nunes', handle: '@rafaelnunes', avatar: '🏗️', course: 'Edificações', followers: 720, following: 300, verified: false },
-  { id: 8, name: 'Larissa Ferreira', handle: '@larissaferreira', avatar: '💊', course: 'Enfermagem', followers: 1850, following: 420, verified: true },
-  { id: 9, name: 'Bruno Lopes', handle: '@brunolopes', avatar: '🔌', course: 'Redes de Computadores', followers: 945, following: 180, verified: false },
+  { id: 2, name: 'Ana Beatriz', handle: '@anabeatriz', avatar: 'https://i.pravatar.cc/150?img=5', course: 'Análise e Desenvolvimento', followers: 1240, following: 340, verified: true },
+  { id: 3, name: 'Carlos Silva', handle: '@carlossilva', avatar: 'https://i.pravatar.cc/150?img=11', course: 'Mecatrônica', followers: 890, following: 220, verified: false },
+  { id: 4, name: 'Marina Costa', handle: '@marinacosta', avatar: 'https://i.pravatar.cc/150?img=9', course: 'Design Gráfico', followers: 2100, following: 180, verified: true },
+  { id: 5, name: 'Pedro Alves', handle: '@pedroalves', avatar: 'https://i.pravatar.cc/150?img=12', course: 'Eletrotécnica', followers: 560, following: 410, verified: false },
+  { id: 6, name: 'Julia Mendes', handle: '@juliamendes', avatar: 'https://i.pravatar.cc/150?img=10', course: 'Gastronomia', followers: 3400, following: 250, verified: true },
+  { id: 7, name: 'Rafael Nunes', handle: '@rafaelnunes', avatar: 'https://i.pravatar.cc/150?img=13', course: 'Edificações', followers: 720, following: 300, verified: false },
+  { id: 8, name: 'Larissa Ferreira', handle: '@larissaferreira', avatar: 'https://i.pravatar.cc/150?img=20', course: 'Enfermagem', followers: 1850, following: 420, verified: true },
+  { id: 9, name: 'Bruno Lopes', handle: '@brunolopes', avatar: 'https://i.pravatar.cc/150?img=15', course: 'Redes de Computadores', followers: 945, following: 180, verified: false }
 ];
 
 // =====================
@@ -35,46 +35,22 @@ const FAKE_USERS = [
 const INITIAL_POSTS = [
   {
     id: 1, userId: 4,
-    content: 'Finalizei o projeto de identidade visual para o meu TCC! 🎨 Foram semanas de trabalho mas valeu a pena. Obrigada a todos pelo apoio! #Design #SENAI #TCC',
-    image: null, emoji: '🖼️',
-    likes: 87, comments: 14, shares: 5,
-    liked: false, time: '2h atrás', saved: false,
+    content: 'Finalizei o projeto de identidade visual para o meu TCC! 🎨 #Design #SENAI',
+    image: 'https://images.unsplash.com/photo-1561070791-2526d30994b5?w=800', 
+    likes: 87, comments: 14, shares: 5, liked: false, time: '2h atrás', saved: false,
   },
   {
     id: 2, userId: 2,
-    content: 'Acabei de deployar meu primeiro app em React! 🚀 Quem quiser testar o sistema de gestão de estoque, manda mensagem. Feito do zero no curso de ADS no SENAI! #Programação #React #SENAI',
-    image: null, emoji: '💻',
-    likes: 143, comments: 31, shares: 18,
-    liked: false, time: '4h atrás', saved: false,
+    content: 'Acabei de fazer o deploy do meu primeiro projeto em React! 🚀 #Programação',
+    image: 'https://images.unsplash.com/photo-1633356122544-f134324a6cee?w=800',
+    likes: 143, comments: 31, shares: 18, liked: false, time: '4h atrás', saved: false,
   },
   {
     id: 3, userId: 3,
-    content: 'Hoje foi dia de prática em CNC! Maquinamos peças para o projeto final do semestre. A tecnologia na indústria é impressionante 🤖⚙️ #Mecatrônica #Indústria40',
-    image: null, emoji: '⚙️',
-    likes: 56, comments: 8, shares: 3,
-    liked: false, time: '5h atrás', saved: false,
-  },
-  {
-    id: 4, userId: 6,
-    content: 'Aula prática de confeitaria hoje! Fizemos entremet de maracujá com mousse de chocolate belga 😍🍫 O SENAI tem os melhores laboratórios de Gastronomia do país! #Gastronomia #Confeitaria',
-    image: null, emoji: '🍰',
-    likes: 212, comments: 45, shares: 29,
-    liked: false, time: '7h atrás', saved: false,
-  },
-  {
-    id: 5, userId: 8,
-    content: 'Simulação de emergência hospitalar com o manequim de alta fidelidade. Cada simulado nos prepara para salvar vidas de verdade! 💉❤️ Orgulho do curso de Enfermagem SENAI! #Enfermagem #Saúde',
-    image: null, emoji: '🏥',
-    likes: 198, comments: 27, shares: 14,
-    liked: false, time: '9h atrás', saved: false,
-  },
-  {
-    id: 6, userId: 5,
-    content: 'Instalação de painel fotovoltaico concluída! ☀️⚡ Energia limpa e renovável é o futuro. Aprendi na prática aqui no SENAI e já estou aplicando no mercado! #Energia #Solar #Eletrotécnica',
-    image: null, emoji: '☀️',
-    likes: 76, comments: 12, shares: 7,
-    liked: false, time: '12h atrás', saved: false,
-  },
+    content: 'Prática de hoje na oficina de usinagem. 🤖⚙️ #Mecatrônica #SENAI',
+    image: 'https://images.unsplash.com/photo-1537462715879-360eeb61a0ad?w=800',
+    likes: 56, comments: 8, shares: 3, liked: false, time: '5h atrás', saved: false,
+  }
 ];
 
 // =====================
@@ -338,11 +314,8 @@ function updateHeaderUser() {
   const u = App.currentUser;
   const av = $('#headerAvatar');
   if (av) {
-    if (u.avatarImg) {
-      av.innerHTML = `<img src="${u.avatarImg}" alt="">`;
-    } else {
-      av.innerHTML = `<span style="display:flex;align-items:center;justify-content:center;width:100%;height:100%;font-size:18px">${u.avatar}</span>`;
-    }
+    // Agora sempre exibimos como imagem, garantindo que ocupe todo o espaço
+    av.innerHTML = `<img src="${u.avatar}" style="width:100%; height:100%; border-radius:50%; object-fit:cover;" onerror="this.src='https://ui-avatars.com/api/?name=${u.name}'">`;
   }
 }
 
@@ -355,7 +328,9 @@ function renderSidebar() {
   if (!sidebar) return;
   sidebar.innerHTML = `
     <div style="display:flex;align-items:center;gap:10px;padding:12px 14px;border-radius:var(--radius-sm);background:var(--dark-3);margin-bottom:8px;">
-      <div style="width:40px;height:40px;border-radius:50%;background:var(--dark-4);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;border:2px solid var(--red)">${u.avatar}</div>
+      <div style="width:40px;height:40px;border-radius:50%;background:var(--dark-4);display:flex;align-items:center;justify-content:center;flex-shrink:0;border:2px solid var(--red);overflow:hidden;">
+        <img src="${u.avatar}" style="width:100%; height:100%; object-fit:cover;" onerror="this.src='https://ui-avatars.com/api/?name=${u.name}'">
+      </div>
       <div>
         <div style="font-size:14px;font-weight:600">${u.name}</div>
         <div style="font-size:12px;color:var(--gray-mid)">${u.handle}</div>
@@ -399,7 +374,9 @@ function renderStories() {
   let html = `
     <div class="story-item add-story" onclick="openStoryCreator()">
       <div class="story-avatar-wrap">
-        <div class="story-avatar"><span>+</span></div>
+        <div class="story-avatar">
+          <img src="${u.avatar}" style="width:100%; height:100%; border-radius:50%; object-fit:cover;" onerror="this.src='https://ui-avatars.com/api/?name=${u.name}'">
+        </div>
       </div>
       <span class="story-name">Seu story</span>
     </div>
@@ -408,7 +385,9 @@ function renderStories() {
     html += `
       <div class="story-item" onclick="viewStory(${user.id})">
         <div class="story-avatar-wrap">
-          <div class="story-avatar"><span>${user.avatar}</span></div>
+          <div class="story-avatar">
+             <img src="${user.avatar}" style="width:100%; height:100%; border-radius:50%; object-fit:cover;" onerror="this.src='https://ui-avatars.com/api/?name=${user.name}'">
+          </div>
         </div>
         <span class="story-name">${user.name.split(' ')[0]}</span>
       </div>
@@ -431,18 +410,17 @@ function renderPosts() {
 function buildPostCard(post) {
   const user = getUserById(post.userId);
   if (!user) return '';
+
   const verifiedBadge = user.verified ? '<span class="post-badge">✓ Destaque</span>' : '';
   const imgHtml = post.image ? `<img class="post-image" src="${post.image}" alt="" onclick="openImageModal('${post.image}')">` : '';
   const videoHtml = post.video ? `<video src="${post.video}" controls style="width:100%;max-height:400px;display:block;background:#000"></video>` : '';
   const pollHtml = post.poll ? buildPollHtml(post) : '';
-  const emojiPlaceholder = !post.image && !post.video && !post.poll && post.emoji ? `
-    <div style="background:var(--dark-3);display:flex;align-items:center;justify-content:center;height:120px;font-size:60px">${post.emoji}</div>
-  ` : '';
+
   return `
     <div class="post-card" id="post-${post.id}">
       <div class="post-header">
         <div class="post-avatar" onclick="navigateTo('profile')">
-          <span style="display:flex;align-items:center;justify-content:center;width:100%;height:100%;font-size:20px;background:var(--dark-3)">${user.avatar}</span>
+          <img src="${user.avatar}" style="width:100%; height:100%; border-radius:50%; object-fit:cover;" onerror="this.src='https://ui-avatars.com/api/?name=${user.name}'">
         </div>
         <div class="post-user-info">
           <div class="post-username" onclick="navigateTo('profile')">${user.name} ${verifiedBadge}</div>
@@ -453,7 +431,7 @@ function buildPostCard(post) {
       <div class="post-body">
         <p class="post-text">${formatPostText(post.content)}</p>
       </div>
-      ${emojiPlaceholder}${imgHtml}${videoHtml}${pollHtml}
+      ${imgHtml}${videoHtml}${pollHtml}
       <div class="post-footer">
         <button class="post-action ${post.liked ? 'liked' : ''}" onclick="toggleLike(${post.id})">
           <span class="action-icon">${post.liked ? '❤️' : '🤍'}</span>
@@ -474,7 +452,6 @@ function buildPostCard(post) {
     </div>
   `;
 }
-
 
 function buildPollHtml(post) {
   const poll = post.poll;
@@ -1712,7 +1689,9 @@ function renderSuggestions() {
   if (!el) return;
   el.innerHTML = FAKE_USERS.slice(0, 4).map(u => `
     <div class="suggestion-item">
-      <div class="suggestion-avatar">${u.avatar}</div>
+      <div class="suggestion-avatar">
+        <img src="${u.avatar}" alt="Avatar de ${u.name}" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;" onerror="this.src='https://ui-avatars.com/api/?name=${u.name}'">
+      </div>
       <div class="suggestion-info">
         <div class="suggestion-name">${u.name}</div>
         <div class="suggestion-sub">${u.course}</div>
