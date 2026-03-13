@@ -19,14 +19,22 @@ const App = {
 // USUÁRIOS FICTÍCIOS
 // =====================
 const FAKE_USERS = [
-  { id: 2, name: 'Ana Beatriz', handle: '@anabeatriz', avatar: 'https://i.pravatar.cc/150?img=5', course: 'Análise e Desenvolvimento', followers: 1240, following: 340, verified: true },
-  { id: 3, name: 'Carlos Silva', handle: '@carlossilva', avatar: 'https://i.pravatar.cc/150?img=11', course: 'Mecatrônica', followers: 890, following: 220, verified: false },
-  { id: 4, name: 'Marina Costa', handle: '@marinacosta', avatar: 'https://i.pravatar.cc/150?img=9', course: 'Design Gráfico', followers: 2100, following: 180, verified: true },
-  { id: 5, name: 'Pedro Alves', handle: '@pedroalves', avatar: 'https://i.pravatar.cc/150?img=12', course: 'Eletrotécnica', followers: 560, following: 410, verified: false },
-  { id: 6, name: 'Julia Mendes', handle: '@juliamendes', avatar: 'https://i.pravatar.cc/150?img=10', course: 'Gastronomia', followers: 3400, following: 250, verified: true },
-  { id: 7, name: 'Rafael Nunes', handle: '@rafaelnunes', avatar: 'https://i.pravatar.cc/150?img=13', course: 'Edificações', followers: 720, following: 300, verified: false },
-  { id: 8, name: 'Larissa Ferreira', handle: '@larissaferreira', avatar: 'https://i.pravatar.cc/150?img=20', course: 'Enfermagem', followers: 1850, following: 420, verified: true },
-  { id: 9, name: 'Bruno Lopes', handle: '@brunolopes', avatar: 'https://i.pravatar.cc/150?img=15', course: 'Redes de Computadores', followers: 945, following: 180, verified: false }
+  { id: 2, name: 'Ana Beatriz', handle: '@anabeatriz', avatar: 'https://i.pravatar.cc/300?img=5', course: 'Análise e Desenvolvimento', followers: 1240, following: 340, verified: true,
+    storyImg: 'https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=500' },
+  { id: 3, name: 'Felipe Zamora', handle: '@felipezamora', avatar: 'https://i.pravatar.cc/300?img=70', course: 'Mecatrônica', followers: 890, following: 220, verified: false,
+    storyImg: 'https://images.unsplash.com/photo-1537462715879-360eeb61a0ad?w=500' },
+  { id: 4, name: 'Marina Costa', handle: '@marinacosta', avatar: 'https://i.pravatar.cc/300?img=9', course: 'Design Gráfico', followers: 2100, following: 180, verified: true,
+    storyImg: 'https://images.unsplash.com/photo-1561070791-2526d30994b5?w=500' },
+  { id: 5, name: 'Pedro Alves', handle: '@pedroalves', avatar: 'https://i.pravatar.cc/300?img=12', course: 'Eletrotécnica', followers: 560, following: 410, verified: false,
+    storyImg: 'https://images.unsplash.com/photo-1581092918056-0c4c3acd3789?w=500' },
+  { id: 6, name: 'Julia Mendes', handle: '@juliamendes', avatar: 'https://i.pravatar.cc/300?img=10', course: 'Gastronomia', followers: 3400, following: 250, verified: true,
+    storyImg: 'https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=500' },
+  { id: 7, name: 'Rafael Nunes', handle: '@rafaelnunes', avatar: 'https://i.pravatar.cc/300?img=13', course: 'Edificações', followers: 720, following: 300, verified: false,
+    storyImg: 'https://images.unsplash.com/photo-1503387762-592deb58ef4e?w=500' },
+  { id: 8, name: 'Larissa Ferreira', handle: '@larissaferreira', avatar: 'https://i.pravatar.cc/300?img=20', course: 'Enfermagem', followers: 1850, following: 420, verified: true,
+    storyImg: 'https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?w=500' },
+  { id: 9, name: 'Bruno Lopes', handle: '@brunolopes', avatar: 'https://i.pravatar.cc/300?img=15', course: 'Redes de Computadores', followers: 945, following: 180, verified: false,
+    storyImg: 'https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=500' }
 ];
 
 // =====================
@@ -117,6 +125,27 @@ const TRENDING = [
   { tag: '#Design', count: '3.8k posts' },
   { tag: '#Gastronomia', count: '2.9k posts' },
 ];
+
+// =====================
+// CAMADA DE API — MONGODB
+// =====================
+const API = 'http://localhost:3000';
+
+// Utilitário genérico — nunca lança erro para não quebrar o app
+async function apiCall(method, path, body = null) {
+  try {
+    const opts = {
+      method,
+      headers: { 'Content-Type': 'application/json' },
+    };
+    if (body) opts.body = JSON.stringify(body);
+    const resp = await fetch(API + path, opts);
+    if (!resp.ok) return null;
+    return await resp.json();
+  } catch {
+    return null; // servidor offline → ignora silenciosamente
+  }
+}
 
 // =====================
 // DOM HELPERS
@@ -305,6 +334,8 @@ function renderAll() {
   renderProjects();
   renderSettings();
   navigateTo('feed');
+  // Start real-time notification engine
+  startRealtimeNotifications();
 }
 
 // =====================
@@ -396,10 +427,7 @@ function renderStories() {
   wrap.innerHTML = html;
 }
 
-function viewStory(userId) {
-  const user = getUserById(userId);
-  viewStory(userId);
-}
+// viewStory is defined below with full implementation
 
 function renderPosts() {
   const feed = $('#postsFeed');
@@ -499,6 +527,15 @@ function toggleLike(postId) {
   post.likes += post.liked ? 1 : -1;
   renderPosts();
   if (post.liked) showToast('Post curtido! ❤️', 'success');
+
+  // Sincronizar com MongoDB em background
+  const u = App.currentUser;
+  if (u?.email && post.mongoId) {
+    apiCall('POST', '/curtidas/toggle', {
+      usuarioEmail: u.email,
+      postId: post.mongoId,
+    });
+  }
 }
 
 function openComments(postId) {
@@ -533,9 +570,13 @@ function generateFakeComments(postId) {
   ];
   return comments.map(c => {
     const u = getUserById(c.userId);
+    const avSrc = typeof u.avatar === 'string' && u.avatar.startsWith('http')
+      ? u.avatar : `https://ui-avatars.com/api/?name=${encodeURIComponent(u.name)}&background=b80f20&color=fff`;
     return `
       <div style="display:flex;gap:10px;align-items:flex-start">
-        <div style="width:34px;height:34px;border-radius:50%;background:var(--dark-4);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0">${u.avatar}</div>
+        <div style="width:34px;height:34px;border-radius:50%;overflow:hidden;flex-shrink:0">
+          <img src="${avSrc}" style="width:100%;height:100%;object-fit:cover">
+        </div>
         <div style="flex:1">
           <span style="font-size:13px;font-weight:600">${u.name}</span>
           <span style="font-size:12px;color:var(--gray-mid);margin-left:8px">${c.time}</span>
@@ -834,55 +875,106 @@ function selectLocation(loc) {
 // =====================
 function viewStory(userId) {
   const user = getUserById(userId);
-  const stories = [
-    { type: 'text', bg: 'linear-gradient(135deg,#E8192C,#FF6B35)', content: `Olá! Sou ${user.name} 👋`, sub: user.course },
-    { type: 'text', bg: 'linear-gradient(135deg,#1a1a2e,#E8192C)', content: '🎓 Mais um dia no SENAI!', sub: 'Há 2 horas' },
+  const avatarSrc = typeof user.avatar === 'string' && user.avatar.startsWith('http')
+    ? user.avatar : `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name)}&background=b80f20&color=fff`;
+
+  // Story data per user with real images
+  const storyBank = {
+    2: [
+      { type: 'image', img: 'https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=600', caption: 'Estudando React hoje! 💻', sub: 'há 20 min' },
+      { type: 'image', img: 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=600', caption: 'Deploy feito! 🚀', sub: 'há 1h' },
+    ],
+    3: [
+      { type: 'image', img: 'https://images.unsplash.com/photo-1537462715879-360eeb61a0ad?w=600', caption: 'Prática de mecatrônica! ⚙️', sub: 'há 30 min' },
+      { type: 'image', img: 'https://images.unsplash.com/photo-1565514158740-064f34bd6cfd?w=600', caption: 'Mais um projeto finalizado 🔧', sub: 'há 2h' },
+    ],
+    4: [
+      { type: 'image', img: 'https://images.unsplash.com/photo-1561070791-2526d30994b5?w=600', caption: 'Novo projeto de design! 🎨', sub: 'há 10 min' },
+      { type: 'image', img: 'https://images.unsplash.com/photo-1558655146-d09347e92766?w=600', caption: 'Identidade visual do TCC ✨', sub: 'há 45 min' },
+    ],
+    5: [
+      { type: 'image', img: 'https://images.unsplash.com/photo-1581092918056-0c4c3acd3789?w=600', caption: 'Laboratório de elétrica! ⚡', sub: 'há 1h' },
+      { type: 'image', img: 'https://images.unsplash.com/photo-1621905251918-48416bd8575a?w=600', caption: 'Circuito novo montado 🔌', sub: 'há 3h' },
+    ],
+    6: [
+      { type: 'image', img: 'https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=600', caption: 'Aula de gastronomia hoje! 🍳', sub: 'há 5 min' },
+      { type: 'image', img: 'https://images.unsplash.com/photo-1551782450-a2132b4ba21d?w=600', caption: 'Prato especial do dia 🍽️', sub: 'há 2h' },
+    ],
+    7: [
+      { type: 'image', img: 'https://images.unsplash.com/photo-1503387762-592deb58ef4e?w=600', caption: 'Obra em andamento! 🏗️', sub: 'há 15 min' },
+      { type: 'image', img: 'https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=600', caption: 'Projeto de edificações 📐', sub: 'há 4h' },
+    ],
+    8: [
+      { type: 'image', img: 'https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?w=600', caption: 'Plantão hoje! 💊', sub: 'há 25 min' },
+      { type: 'image', img: 'https://images.unsplash.com/photo-1559757175-0eb30cd8c063?w=600', caption: 'Estágio na UTI 🏥', sub: 'há 6h' },
+    ],
+    9: [
+      { type: 'image', img: 'https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=600', caption: 'Configurando servidor! 🖥️', sub: 'há 40 min' },
+      { type: 'image', img: 'https://images.unsplash.com/photo-1544197150-b99a580bb7a8?w=600', caption: 'Redes em dia! 🌐', sub: 'há 5h' },
+    ],
+  };
+
+  const stories = storyBank[userId] || [
+    { type: 'image', img: user.storyImg || 'https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=600', caption: `Olá! Sou ${user.name} 👋`, sub: 'há 1h' },
   ];
+
   let idx = 0;
 
   const overlay = document.createElement('div');
   overlay.id = 'storyOverlay';
-  overlay.style.cssText = 'position:fixed;inset:0;z-index:3000;background:#000;display:flex;align-items:center;justify-content:center';
+  overlay.style.cssText = 'position:fixed;inset:0;z-index:3000;background:rgba(0,0,0,0.9);display:flex;align-items:center;justify-content:center;animation:fadeIn .2s ease';
 
   const render = () => {
     const s = stories[idx];
     overlay.innerHTML = `
-      <div style="width:100%;max-width:400px;height:100vh;position:relative;overflow:hidden;${s.bg ? 'background:' + s.bg : 'background:var(--dark-2)'}">
+      <div style="width:100%;max-width:420px;height:100vh;max-height:780px;position:relative;overflow:hidden;border-radius:16px;background:#111;box-shadow:0 20px 80px rgba(0,0,0,0.8)">
+        <!-- Background image -->
+        <div style="position:absolute;inset:0;overflow:hidden">
+          <img src="${s.img}" style="width:100%;height:100%;object-fit:cover;filter:brightness(0.75)" onerror="this.style.display='none'">
+          <div style="position:absolute;inset:0;background:linear-gradient(to bottom,rgba(0,0,0,0.45) 0%,transparent 30%,transparent 60%,rgba(0,0,0,0.7) 100%)"></div>
+        </div>
+
         <!-- Progress bars -->
         <div style="position:absolute;top:12px;left:12px;right:12px;display:flex;gap:4px;z-index:10">
-          ${stories.map((_, i) => `<div style="flex:1;height:3px;background:${i < idx ? '#fff' : i === idx ? 'rgba(255,255,255,0.5)' : 'rgba(255,255,255,0.3)'};border-radius:2px;overflow:hidden">
-            ${i === idx ? '<div style="height:100%;background:#fff;animation:storyProgress 4s linear forwards"></div>' : ''}
-          </div>`).join('')}
+          ${stories.map((_, i) => `
+            <div style="flex:1;height:3px;background:rgba(255,255,255,0.3);border-radius:2px;overflow:hidden">
+              ${i < idx ? '<div style="height:100%;background:#fff;width:100%"></div>' : ''}
+              ${i === idx ? '<div style="height:100%;background:#fff;animation:storyProgress 5s linear forwards"></div>' : ''}
+            </div>
+          `).join('')}
         </div>
+
         <!-- Header -->
-        <div style="position:absolute;top:28px;left:12px;right:12px;display:flex;align-items:center;gap:10px;z-index:10">
-          <div style="width:38px;height:38px;border-radius:50%;background:rgba(255,255,255,0.2);display:flex;align-items:center;justify-content:center;font-size:20px">${user.avatar}</div>
+        <div style="position:absolute;top:26px;left:12px;right:12px;display:flex;align-items:center;gap:10px;z-index:10">
+          <div style="width:40px;height:40px;border-radius:50%;border:2px solid #fff;overflow:hidden;flex-shrink:0">
+            <img src="${avatarSrc}" style="width:100%;height:100%;object-fit:cover">
+          </div>
           <div>
-            <div style="font-size:14px;font-weight:600;color:#fff">${user.name}</div>
-            <div style="font-size:11px;color:rgba(255,255,255,0.7)">${s.sub || ''}</div>
+            <div style="font-size:14px;font-weight:700;color:#fff;text-shadow:0 1px 4px rgba(0,0,0,0.5)">${user.name}</div>
+            <div style="font-size:11px;color:rgba(255,255,255,0.75)">${s.sub || ''}</div>
           </div>
-          <button onclick="document.getElementById('storyOverlay').remove()" style="margin-left:auto;background:none;border:none;color:#fff;font-size:24px;cursor:pointer">✕</button>
+          <button onclick="document.getElementById('storyOverlay').remove()" style="margin-left:auto;background:rgba(0,0,0,0.35);backdrop-filter:blur(4px);border:none;color:#fff;font-size:20px;cursor:pointer;width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center">✕</button>
         </div>
-        <!-- Content -->
-        <div style="display:flex;align-items:center;justify-content:center;height:100%;padding:80px 24px">
-          <div style="text-align:center">
-            <div style="font-size:64px;margin-bottom:16px">${user.avatar}</div>
-            <div style="font-size:26px;font-weight:800;color:#fff;font-family:var(--font-display)">${s.content}</div>
-          </div>
+
+        <!-- Caption -->
+        <div style="position:absolute;bottom:80px;left:16px;right:16px;z-index:10">
+          <div style="font-size:18px;font-weight:700;color:#fff;text-shadow:0 2px 8px rgba(0,0,0,0.7);line-height:1.3">${s.caption}</div>
         </div>
+
         <!-- Nav areas -->
-        <div style="position:absolute;left:0;top:0;width:40%;height:100%;cursor:pointer" onclick="storyNav(-1)"></div>
-        <div style="position:absolute;right:0;top:0;width:40%;height:100%;cursor:pointer" onclick="storyNav(1)"></div>
+        <div style="position:absolute;left:0;top:0;width:40%;height:100%;cursor:pointer;z-index:5" onclick="storyNav(-1)"></div>
+        <div style="position:absolute;right:0;top:0;width:40%;height:100%;cursor:pointer;z-index:5" onclick="storyNav(1)"></div>
+
         <!-- Bottom reactions -->
-        <div style="position:absolute;bottom:24px;left:12px;right:12px;display:flex;gap:8px">
-          <input placeholder="Responder story..." style="flex:1;background:rgba(255,255,255,0.15);border:1.5px solid rgba(255,255,255,0.3);border-radius:999px;padding:10px 16px;color:#fff;font-size:14px;outline:none;font-family:var(--font-body)" onfocus="this.style.background='rgba(255,255,255,0.25)'">
-          <button onclick="showToast('Reação enviada! ❤️','success')" style="background:rgba(255,255,255,0.2);border:none;color:#fff;font-size:22px;width:44px;height:44px;border-radius:50%;cursor:pointer">❤️</button>
+        <div style="position:absolute;bottom:20px;left:12px;right:12px;display:flex;gap:8px;z-index:10">
+          <input placeholder="Responder story..." style="flex:1;background:rgba(255,255,255,0.15);backdrop-filter:blur(8px);border:1.5px solid rgba(255,255,255,0.3);border-radius:999px;padding:10px 16px;color:#fff;font-size:14px;outline:none;font-family:var(--font-body)" onfocus="this.style.background='rgba(255,255,255,0.25)'">
+          <button onclick="showToast('Reação enviada! ❤️','success')" style="background:rgba(255,255,255,0.2);backdrop-filter:blur(8px);border:none;color:#fff;font-size:20px;width:44px;height:44px;border-radius:50%;cursor:pointer;flex-shrink:0">❤️</button>
+          <button onclick="showToast('Story compartilhado! 🔗','success')" style="background:rgba(255,255,255,0.2);backdrop-filter:blur(8px);border:none;color:#fff;font-size:20px;width:44px;height:44px;border-radius:50%;cursor:pointer;flex-shrink:0">📤</button>
         </div>
       </div>
     `;
-    // Auto advance
     clearTimeout(overlay._timer);
-    overlay._timer = setTimeout(() => storyNav(1), 4000);
+    overlay._timer = setTimeout(() => storyNav(1), 5000);
   };
 
   window.storyNav = (dir) => {
@@ -892,54 +984,340 @@ function viewStory(userId) {
     render();
   };
 
+  // Close on background click
+  overlay.addEventListener('click', (e) => {
+    if (e.target === overlay) overlay.remove();
+  });
+
   document.body.appendChild(overlay);
   render();
 }
 
 // =====================
-// GRUPOS
+// GRUPOS FUNCIONAL
 // =====================
 const GROUPS = [
-  { id: 1, name: 'ADS SENAI SP', emoji: '💻', members: 342, description: 'Grupo dos alunos de Análise e Desenvolvimento de Sistemas', joined: false },
-  { id: 2, name: 'Design & Criação', emoji: '🎨', members: 218, description: 'Compartilhe projetos e dicas de design gráfico', joined: false },
-  { id: 3, name: 'Mecatrônica SENAI', emoji: '⚙️', members: 189, description: 'Automação, robótica e indústria 4.0', joined: true },
-  { id: 4, name: 'Gastronomia SENAI', emoji: '🍽️', members: 276, description: 'Receitas, técnicas e novidades da gastronomia', joined: false },
-  { id: 5, name: 'Eletrotécnica & Energia', emoji: '⚡', members: 145, description: 'Energia solar, elétrica e automação residencial', joined: false },
-  { id: 6, name: 'Saúde & Enfermagem', emoji: '💊', members: 203, description: 'Conteúdo de saúde, simulados e estudos', joined: true },
+  { id: 1, name: 'ADS SENAI SP', emoji: '💻', banner: 'https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=800', members: 342, description: 'Grupo dos alunos de Análise e Desenvolvimento de Sistemas', joined: false, category: 'Tecnologia',
+    posts: [
+      { id: 101, userId: 2, text: 'Alguém tem dica de material para estudar Node.js? 🤔', time: '10 min', likes: 12, liked: false, comments: 5 },
+      { id: 102, userId: 4, text: 'Compartilhando o link do meu projeto final em React! Feedback bem-vindo 🚀', time: '2h', likes: 34, liked: false, comments: 11 },
+      { id: 103, userId: 9, text: 'Quem toparia montar um grupo de estudos pra prova de algoritmos? 📚', time: '5h', likes: 27, liked: false, comments: 8 },
+    ]
+  },
+  { id: 2, name: 'Design & Criação', emoji: '🎨', banner: 'https://images.unsplash.com/photo-1561070791-2526d30994b5?w=800', members: 218, description: 'Compartilhe projetos e dicas de design gráfico', joined: false, category: 'Design',
+    posts: [
+      { id: 201, userId: 4, text: 'Finalizei minha identidade visual do TCC! Usou Figma do começo ao fim 🎨', time: '30 min', likes: 56, liked: false, comments: 14 },
+      { id: 202, userId: 2, text: 'Qual ferramenta vocês preferem para prototipagem: Figma ou Adobe XD?', time: '3h', likes: 18, liked: false, comments: 22 },
+    ]
+  },
+  { id: 3, name: 'Mecatrônica SENAI', emoji: '⚙️', banner: 'https://images.unsplash.com/photo-1537462715879-360eeb61a0ad?w=800', members: 189, description: 'Automação, robótica e indústria 4.0', joined: true, category: 'Engenharia',
+    posts: [
+      { id: 301, userId: 3, text: 'Montamos um braço robótico com Arduino na aula de hoje! ⚙️🤖', time: '1h', likes: 45, liked: false, comments: 9 },
+      { id: 302, userId: 5, text: 'Alguém tem experiência com CLP Siemens S7-1200? Preciso de ajuda com ladder 😅', time: '4h', likes: 8, liked: false, comments: 16 },
+    ]
+  },
+  { id: 4, name: 'Gastronomia SENAI', emoji: '🍽️', banner: 'https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=800', members: 276, description: 'Receitas, técnicas e novidades da gastronomia', joined: false, category: 'Gastronomia',
+    posts: [
+      { id: 401, userId: 6, text: 'Fiz esse suflê de chocolate na aula de hoje, ficou INCRÍVEL 🍫😍', time: '45 min', likes: 89, liked: false, comments: 23 },
+      { id: 402, userId: 7, text: 'Dicas de facas boas para iniciantes? Ainda usando as da escola 🔪', time: '6h', likes: 11, liked: false, comments: 7 },
+    ]
+  },
+  { id: 5, name: 'Eletrotécnica & Energia', emoji: '⚡', banner: 'https://images.unsplash.com/photo-1621905251918-48416bd8575a?w=800', members: 145, description: 'Energia solar, elétrica e automação residencial', joined: false, category: 'Engenharia',
+    posts: [
+      { id: 501, userId: 5, text: 'Instalamos um sistema fotovoltaico de 5kWp no laboratório essa semana! ☀️', time: '2h', likes: 38, liked: false, comments: 6 },
+    ]
+  },
+  { id: 6, name: 'Saúde & Enfermagem', emoji: '💊', banner: 'https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?w=800', members: 203, description: 'Conteúdo de saúde, simulados e estudos', joined: true, category: 'Saúde',
+    posts: [
+      { id: 601, userId: 8, text: 'Dica de ouro para o simulado de farmacologia: use flashcards! 📇✅', time: '20 min', likes: 61, liked: false, comments: 18 },
+      { id: 602, userId: 6, text: 'Alguém sabe se haverá vagas de estágio no Hospital das Clínicas este semestre?', time: '7h', likes: 14, liked: false, comments: 31 },
+    ]
+  },
 ];
+
+// Track which group is currently open
+App.activeGroup = null;
 
 function renderGroups() {
   const container = document.getElementById('page-grupos');
   if (!container) return;
+
+  if (App.activeGroup !== null) {
+    renderGroupDetail(App.activeGroup);
+    return;
+  }
+
+  const myGroups = GROUPS.filter(g => g.joined);
+  const discover = GROUPS.filter(g => !g.joined);
+
   container.innerHTML = `
-    <div class="page-header">
-      <h1 class="page-title">👥 Grupos</h1>
-      <p class="page-subtitle">Participe de comunidades do seu curso</p>
+    <div class="page-header" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px">
+      <div>
+        <h1 class="page-title">👥 Grupos</h1>
+        <p class="page-subtitle">Participe de comunidades do seu curso</p>
+      </div>
+      <button onclick="openCreateGroupModal()" style="background:var(--red);color:#fff;border:none;border-radius:var(--radius-sm);padding:10px 20px;font-size:14px;font-weight:600;cursor:pointer">+ Criar Grupo</button>
     </div>
-    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px" id="groupsGrid">
-      ${GROUPS.map(g => `
-        <div style="background:var(--dark-2);border:1px solid var(--dark-4);border-radius:var(--radius);padding:20px;transition:var(--transition)" onmouseover="this.style.borderColor='var(--red)'" onmouseout="this.style.borderColor='var(--dark-4)'">
-          <div style="font-size:40px;margin-bottom:10px">${g.emoji}</div>
-          <div style="font-family:var(--font-display);font-size:17px;font-weight:700;margin-bottom:4px">${g.name}</div>
-          <div style="font-size:13px;color:var(--gray-light);margin-bottom:12px;line-height:1.5">${g.description}</div>
-          <div style="display:flex;align-items:center;justify-content:space-between">
-            <span style="font-size:13px;color:var(--gray-mid)">👤 ${g.members} membros</span>
-            <button id="group-btn-${g.id}" onclick="toggleGroup(${g.id})" style="background:${g.joined ? 'var(--dark-4)' : 'var(--red)'};color:${g.joined ? 'var(--gray-light)' : '#fff'};border:none;border-radius:var(--radius-full);padding:7px 16px;font-size:13px;font-weight:600;cursor:pointer;transition:var(--transition)">
-              ${g.joined ? '✓ Participando' : 'Participar'}
-            </button>
-          </div>
+
+    ${myGroups.length ? `
+      <div style="margin-bottom:28px">
+        <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--gray-mid);margin-bottom:12px">Meus grupos (${myGroups.length})</div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px">
+          ${myGroups.map(g => buildGroupCard(g)).join('')}
         </div>
-      `).join('')}
+      </div>
+    ` : ''}
+
+    <div>
+      <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--gray-mid);margin-bottom:12px">Descobrir grupos</div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px">
+        ${discover.map(g => buildGroupCard(g)).join('')}
+      </div>
     </div>
   `;
+}
+
+function buildGroupCard(g) {
+  return `
+    <div style="background:var(--dark-2);border:1px solid var(--dark-4);border-radius:var(--radius);overflow:hidden;transition:var(--transition);cursor:pointer"
+      onmouseover="this.style.borderColor='var(--red)';this.style.transform='translateY(-2px)'"
+      onmouseout="this.style.borderColor='var(--dark-4)';this.style.transform=''"
+      onclick="openGroupDetail(${g.id})">
+      <div style="height:80px;overflow:hidden;position:relative">
+        <img src="${g.banner}" style="width:100%;height:100%;object-fit:cover;filter:brightness(0.6)">
+        <div style="position:absolute;top:10px;left:12px;font-size:28px">${g.emoji}</div>
+        <div style="position:absolute;top:8px;right:10px;background:rgba(0,0,0,0.5);backdrop-filter:blur(4px);border-radius:4px;font-size:10px;font-weight:600;color:#fff;padding:2px 8px;text-transform:uppercase;letter-spacing:.05em">${g.category}</div>
+      </div>
+      <div style="padding:14px">
+        <div style="font-family:var(--font-display);font-size:15px;font-weight:700;margin-bottom:4px">${g.name}</div>
+        <div style="font-size:12px;color:var(--gray-light);margin-bottom:10px;line-height:1.4">${g.description}</div>
+        <div style="display:flex;align-items:center;justify-content:space-between">
+          <span style="font-size:12px;color:var(--gray-mid)">👤 ${g.members.toLocaleString()} membros</span>
+          <button id="group-btn-${g.id}" onclick="event.stopPropagation();toggleGroup(${g.id})"
+            style="background:${g.joined ? 'var(--dark-4)' : 'var(--red)'};color:${g.joined ? 'var(--gray-light)' : '#fff'};border:none;border-radius:var(--radius-full);padding:6px 14px;font-size:12px;font-weight:600;cursor:pointer;transition:var(--transition)">
+            ${g.joined ? '✓ Participando' : 'Participar'}
+          </button>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function openGroupDetail(groupId) {
+  App.activeGroup = groupId;
+  renderGroupDetail(groupId);
+}
+
+function renderGroupDetail(groupId) {
+  const container = document.getElementById('page-grupos');
+  const g = GROUPS.find(g => g.id === groupId);
+  if (!container || !g) return;
+
+  container.innerHTML = `
+    <!-- Banner -->
+    <div style="position:relative;height:160px;overflow:hidden;border-radius:var(--radius);margin-bottom:0">
+      <img src="${g.banner}" style="width:100%;height:100%;object-fit:cover;filter:brightness(0.55)">
+      <div style="position:absolute;inset:0;background:linear-gradient(to bottom,transparent 40%,rgba(0,0,0,0.8))"></div>
+      <button onclick="App.activeGroup=null;renderGroups()" style="position:absolute;top:14px;left:14px;background:rgba(0,0,0,0.5);backdrop-filter:blur(6px);border:none;color:#fff;padding:7px 14px;border-radius:var(--radius-full);font-size:13px;cursor:pointer;display:flex;align-items:center;gap:6px">← Voltar</button>
+      <div style="position:absolute;bottom:16px;left:16px;right:16px;display:flex;align-items:flex-end;justify-content:space-between;gap:10px;flex-wrap:wrap">
+        <div>
+          <div style="font-size:32px;margin-bottom:4px">${g.emoji}</div>
+          <div style="font-family:var(--font-display);font-size:22px;font-weight:800;color:#fff">${g.name}</div>
+          <div style="font-size:13px;color:rgba(255,255,255,0.8)">${g.members.toLocaleString()} membros · ${g.category}</div>
+        </div>
+        <button onclick="toggleGroup(${g.id})"
+          style="background:${g.joined ? 'rgba(255,255,255,0.15)' : 'var(--red)'};backdrop-filter:blur(6px);color:#fff;border:${g.joined ? '1.5px solid rgba(255,255,255,0.3)' : 'none'};border-radius:var(--radius-full);padding:9px 20px;font-size:14px;font-weight:600;cursor:pointer;flex-shrink:0">
+          ${g.joined ? '✓ Participando' : '+ Participar'}
+        </button>
+      </div>
+    </div>
+
+    <!-- Info bar -->
+    <div style="background:var(--dark-2);border:1px solid var(--dark-4);border-radius:var(--radius);padding:16px;margin-top:14px;margin-bottom:14px;display:flex;align-items:center;gap:20px;flex-wrap:wrap">
+      <div style="flex:1">
+        <div style="font-size:14px;color:var(--gray-light)">${g.description}</div>
+      </div>
+      <!-- Mini member avatars -->
+      <div style="display:flex;align-items:center;gap:-6px">
+        ${FAKE_USERS.slice(0,5).map((u,i) => `
+          <div style="width:30px;height:30px;border-radius:50%;overflow:hidden;border:2px solid var(--dark-2);margin-left:${i===0?'0':'-8px'};z-index:${5-i}">
+            <img src="${u.avatar}" style="width:100%;height:100%;object-fit:cover" onerror="this.style.background='var(--dark-4)'">
+          </div>
+        `).join('')}
+        <div style="margin-left:6px;font-size:12px;color:var(--gray-mid)">e mais ${g.members - 5} membros</div>
+      </div>
+    </div>
+
+    <!-- Post composer (only if joined) -->
+    ${g.joined ? `
+      <div style="background:var(--dark-2);border:1px solid var(--dark-4);border-radius:var(--radius);padding:14px;margin-bottom:14px">
+        <div style="display:flex;gap:10px;align-items:center">
+          <div style="width:36px;height:36px;border-radius:50%;overflow:hidden;flex-shrink:0;border:2px solid var(--red)">
+            <img src="${typeof App.currentUser.avatar === 'string' && App.currentUser.avatar.startsWith('http') ? App.currentUser.avatar : 'https://ui-avatars.com/api/?name=' + encodeURIComponent(App.currentUser.name) + '&background=b80f20&color=fff'}" style="width:100%;height:100%;object-fit:cover">
+          </div>
+          <input id="groupPostInput-${g.id}" placeholder="Compartilhe algo com o grupo ${g.name}..." onclick="openGroupPostModal(${g.id})"
+            style="flex:1;background:var(--dark-3);border:1.5px solid var(--dark-4);border-radius:var(--radius-full);padding:10px 16px;color:var(--gray-light);font-size:14px;outline:none;cursor:pointer;font-family:var(--font-body)" readonly>
+          <button onclick="openGroupPostModal(${g.id})" style="background:var(--red);color:#fff;border:none;border-radius:var(--radius-full);padding:9px 18px;font-size:13px;font-weight:600;cursor:pointer;flex-shrink:0">Postar</button>
+        </div>
+      </div>
+    ` : `
+      <div style="background:rgba(232,25,44,0.06);border:1px solid rgba(232,25,44,0.2);border-radius:var(--radius);padding:14px;margin-bottom:14px;text-align:center;font-size:14px;color:var(--gray-light)">
+        👋 Entre no grupo para publicar e interagir com os membros!
+        <button onclick="toggleGroup(${g.id})" style="display:block;margin:10px auto 0;background:var(--red);color:#fff;border:none;border-radius:var(--radius-full);padding:8px 20px;font-size:13px;font-weight:600;cursor:pointer">Participar agora</button>
+      </div>
+    `}
+
+    <!-- Posts feed -->
+    <div id="groupPostsFeed-${g.id}" style="display:flex;flex-direction:column;gap:12px">
+      ${g.posts.map(p => buildGroupPost(p, g.id)).join('')}
+    </div>
+  `;
+}
+
+function buildGroupPost(post, groupId) {
+  const user = getUserById(post.userId);
+  const avatarSrc = typeof user.avatar === 'string' && user.avatar.startsWith('http')
+    ? user.avatar : `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name)}&background=b80f20&color=fff`;
+  return `
+    <div class="post-card" id="gpost-${post.id}">
+      <div class="post-header">
+        <div class="post-avatar" style="overflow:hidden;padding:0">
+          <img src="${avatarSrc}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">
+        </div>
+        <div class="post-user-info">
+          <div class="post-username">${user.name} ${user.verified ? '<span class="post-badge">✓ Destaque</span>' : ''}</div>
+          <div class="post-meta">${user.course} · ${post.time}</div>
+        </div>
+      </div>
+      <div class="post-body">
+        <p class="post-text">${formatPostText(post.text)}</p>
+      </div>
+      <div class="post-footer">
+        <button class="post-action ${post.liked ? 'liked' : ''}" onclick="likeGroupPost(${post.id}, ${groupId})">
+          <span class="action-icon">${post.liked ? '❤️' : '🤍'}</span>
+          <span>${post.likes}</span>
+        </button>
+        <button class="post-action" onclick="openGroupComments(${post.id}, ${groupId})">
+          <span class="action-icon">💬</span>
+          <span>${post.comments}</span>
+        </button>
+        <button class="post-action" onclick="showToast('Post compartilhado! 🔗','success')">
+          <span class="action-icon">🔗</span>
+        </button>
+      </div>
+    </div>
+  `;
+}
+
+function likeGroupPost(postId, groupId) {
+  const g = GROUPS.find(g => g.id === groupId);
+  const post = g?.posts.find(p => p.id === postId);
+  if (!post) return;
+  post.liked = !post.liked;
+  post.likes += post.liked ? 1 : -1;
+  renderGroupDetail(groupId);
+  if (post.liked) showToast('Post curtido! ❤️', 'success');
+}
+
+function openGroupComments(postId, groupId) {
+  const g = GROUPS.find(g => g.id === groupId);
+  const post = g?.posts.find(p => p.id === postId);
+  const user = getUserById(post.userId);
+  const title = $('#genericModalTitle');
+  const body = $('#genericModalBody');
+  title.textContent = `💬 Comentários`;
+  body.innerHTML = `
+    <div style="background:var(--dark-3);border-radius:var(--radius-sm);padding:12px;margin-bottom:14px;font-size:14px;color:var(--gray-light)">${post.text.slice(0, 120)}</div>
+    <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:16px">
+      ${generateFakeComments(postId)}
+    </div>
+    <div style="display:flex;gap:10px;align-items:center">
+      <input id="groupCommentInput" placeholder="Escreva um comentário..." style="flex:1;background:var(--dark-3);border:1.5px solid var(--dark-4);border-radius:var(--radius-full);padding:10px 16px;color:var(--white);font-size:14px;outline:none;font-family:var(--font-body)">
+      <button onclick="post.comments++;closeModal('genericModal');renderGroupDetail(${groupId});showToast('Comentário publicado! 💬','success')" style="background:var(--red);border:none;border-radius:50%;width:40px;height:40px;color:#fff;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center">➤</button>
+    </div>
+  `;
+  openModal('genericModal');
+}
+
+function openGroupPostModal(groupId) {
+  const g = GROUPS.find(g => g.id === groupId);
+  const title = $('#genericModalTitle');
+  const body = $('#genericModalBody');
+  title.textContent = `✍️ Postar em ${g.name}`;
+  body.innerHTML = `
+    <textarea id="groupPostText" placeholder="O que você quer compartilhar com o grupo?" style="width:100%;background:var(--dark-3);border:1.5px solid var(--dark-4);border-radius:var(--radius-sm);padding:14px;color:var(--white);font-size:15px;outline:none;resize:vertical;min-height:100px;font-family:var(--font-body)"></textarea>
+    <button onclick="submitGroupPost(${groupId})" style="width:100%;margin-top:14px;background:var(--red);color:#fff;border:none;border-radius:var(--radius-sm);padding:13px;font-size:15px;font-weight:600;cursor:pointer">🚀 Publicar no Grupo</button>
+  `;
+  openModal('genericModal');
+}
+
+function submitGroupPost(groupId) {
+  const text = document.getElementById('groupPostText')?.value.trim();
+  if (!text) { showToast('Escreva algo antes de publicar!'); return; }
+  const g = GROUPS.find(g => g.id === groupId);
+  g.posts.unshift({
+    id: Date.now(), userId: 1,
+    text, time: 'agora', likes: 0, liked: false, comments: 0,
+  });
+  closeModal('genericModal');
+  renderGroupDetail(groupId);
+  showToast('Publicado no grupo! 🎉', 'success');
+}
+
+function openCreateGroupModal() {
+  const title = $('#genericModalTitle');
+  const body = $('#genericModalBody');
+  title.textContent = '👥 Criar Novo Grupo';
+  body.innerHTML = `
+    <div style="display:flex;flex-direction:column;gap:12px">
+      <div>
+        <label style="display:block;font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--gray-mid);margin-bottom:6px">Nome do grupo</label>
+        <input id="newGroupName" placeholder="Ex: TCC SENAI 2026" style="width:100%;background:var(--dark-3);border:1.5px solid var(--dark-4);border-radius:var(--radius-sm);padding:11px 14px;color:var(--white);font-size:15px;outline:none;font-family:var(--font-body)">
+      </div>
+      <div>
+        <label style="display:block;font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--gray-mid);margin-bottom:6px">Descrição</label>
+        <textarea id="newGroupDesc" placeholder="Do que se trata esse grupo?" style="width:100%;background:var(--dark-3);border:1.5px solid var(--dark-4);border-radius:var(--radius-sm);padding:11px 14px;color:var(--white);font-size:14px;outline:none;resize:vertical;min-height:70px;font-family:var(--font-body)"></textarea>
+      </div>
+      <div>
+        <label style="display:block;font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--gray-mid);margin-bottom:6px">Categoria</label>
+        <select id="newGroupCategory" style="width:100%;background:var(--dark-3);border:1.5px solid var(--dark-4);border-radius:var(--radius-sm);padding:11px 14px;color:var(--white);font-size:14px;outline:none;appearance:none;cursor:pointer">
+          <option>Tecnologia</option><option>Design</option><option>Engenharia</option>
+          <option>Gastronomia</option><option>Saúde</option><option>Geral</option>
+        </select>
+      </div>
+      <button onclick="createGroup()" style="width:100%;background:var(--red);color:#fff;border:none;border-radius:var(--radius-sm);padding:13px;font-size:15px;font-weight:600;cursor:pointer;margin-top:4px">Criar Grupo 🚀</button>
+    </div>
+  `;
+  openModal('genericModal');
+}
+
+function createGroup() {
+  const name = document.getElementById('newGroupName')?.value.trim();
+  const desc = document.getElementById('newGroupDesc')?.value.trim();
+  const category = document.getElementById('newGroupCategory')?.value;
+  if (!name || !desc) { showToast('Preencha nome e descrição!'); return; }
+  const emojis = ['🌟','📚','💡','🏆','🤝','🔥'];
+  GROUPS.push({
+    id: Date.now(), name, description: desc, category,
+    emoji: emojis[Math.floor(Math.random() * emojis.length)],
+    banner: 'https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=800',
+    members: 1, joined: true, posts: [],
+  });
+  closeModal('genericModal');
+  renderGroups();
+  showToast(`Grupo "${name}" criado com sucesso! 🎉`, 'success');
 }
 
 function toggleGroup(id) {
   const g = GROUPS.find(g => g.id === id);
   g.joined = !g.joined;
   g.members += g.joined ? 1 : -1;
-  renderGroups();
-  navigateTo('grupos');
+  if (App.activeGroup === id) {
+    renderGroupDetail(id);
+  } else {
+    renderGroups();
+    navigateTo('grupos');
+  }
   showToast(g.joined ? `Você entrou no grupo "${g.name}"! 🎉` : `Saiu do grupo "${g.name}"`, g.joined ? 'success' : '');
 }
 
@@ -1106,6 +1484,8 @@ function renderProjects() {
     <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px">
       ${PROJECTS.map(p => {
         const user = getUserById(p.userId);
+        const avatarSrc = typeof user.avatar === 'string' && user.avatar.startsWith('http')
+          ? user.avatar : `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name)}&background=b80f20&color=fff`;
         return `
           <div style="background:var(--dark-2);border:1px solid var(--dark-4);border-radius:var(--radius);overflow:hidden;transition:var(--transition)" onmouseover="this.style.borderColor='var(--red)'" onmouseout="this.style.borderColor='var(--dark-4)'">
             <div style="height:100px;background:linear-gradient(135deg,var(--dark-3),var(--dark-4));display:flex;align-items:center;justify-content:center;font-size:48px">${p.emoji}</div>
@@ -1117,14 +1497,21 @@ function renderProjects() {
               </div>
               <div style="display:flex;align-items:center;justify-content:space-between;border-top:1px solid var(--dark-4);padding-top:10px">
                 <div style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--gray-mid)">
-                  <span>${user.avatar}</span><span>${user.name.split(' ')[0]}</span>
+                  <div style="width:24px;height:24px;border-radius:50%;overflow:hidden;flex-shrink:0">
+                    <img src="${avatarSrc}" style="width:100%;height:100%;object-fit:cover">
+                  </div>
+                  <span>${user.name.split(' ')[0]}</span>
                 </div>
-                <div style="display:flex;gap:10px">
+                <div style="display:flex;gap:10px;align-items:center">
                   <button onclick="likeProject(${p.id})" style="background:none;border:none;color:${p.liked ? 'var(--red)' : 'var(--gray-mid)'};cursor:pointer;font-size:13px;display:flex;align-items:center;gap:4px">
                     ${p.liked ? '❤️' : '🤍'} ${p.likes}
                   </button>
-                  <button onclick="openProjectComments(p.id)" style="background:none;border:none;color:var(--gray-mid);cursor:pointer;font-size:13px;display:flex;align-items:center;gap:4px">
+                  <button onclick="openProjectComments(${p.id})" style="background:none;border:none;color:var(--gray-mid);cursor:pointer;font-size:13px;display:flex;align-items:center;gap:4px">
                     💬 ${p.comments}
+                  </button>
+                  <button onclick="toggleSaveProject(${p.id})" title="${p.saved ? 'Remover dos salvos' : 'Salvar projeto'}"
+                    style="background:none;border:none;color:${p.saved ? 'var(--red)' : 'var(--gray-mid)'};cursor:pointer;font-size:16px;padding:0 2px">
+                    ${p.saved ? '🔖' : '📌'}
                   </button>
                 </div>
               </div>
@@ -1141,7 +1528,28 @@ function likeProject(id) {
   p.liked = !p.liked;
   p.likes += p.liked ? 1 : -1;
   renderProjects();
-  navigateTo('projetos');
+  if (p.liked) showToast('Projeto curtido! ❤️', 'success');
+}
+
+function toggleSaveProject(id) {
+  const p = PROJECTS.find(pr => pr.id === id);
+  if (!p) return;
+  p.saved = !p.saved;
+  renderProjects();
+  showToast(p.saved ? 'Projeto salvo! 🔖' : 'Projeto removido dos salvos.', p.saved ? 'success' : '');
+
+  // Sincronizar com MongoDB em background
+  const u = App.currentUser;
+  if (u?.email) {
+    apiCall('POST', '/projetos-salvos/toggle', {
+      usuarioEmail: u.email,
+      projetoId:    String(p.id),
+      titulo:       p.title,
+      descricao:    p.desc,
+      tags:         p.tags,
+      emoji:        p.emoji,
+    });
+  }
 }
 
 function openNewProjectModal() {
@@ -1172,11 +1580,12 @@ function submitProject() {
   const desc = document.getElementById('projDesc')?.value.trim();
   const tags = document.getElementById('projTags')?.value.split(',').map(t => t.trim()).filter(Boolean);
   if (!title || !desc) { showToast('Preencha título e descrição!'); return; }
-  PROJECTS.unshift({
+  const newProj = {
     id: Date.now(), userId: 1,
     title, desc, tags: tags.length ? tags : ['Projeto SENAI'],
-    emoji: '📂', likes: 0, comments: 0, liked: false,
-  });
+    emoji: '📂', likes: 0, comments: 0, liked: false, saved: false,
+  };
+  PROJECTS.unshift(newProj);
   closeModal('genericModal');
   renderProjects();
   navigateTo('projetos');
@@ -1352,15 +1761,19 @@ function submitNewPost() {
   const text = $('#newPostText').value.trim();
   if (!text && !pendingMediaBase64) { showToast('Escreva algo antes de publicar!'); return; }
   const location = App.pendingLocation ? `\n📍 ${App.pendingLocation}` : '';
+  const content = (text || '') + location;
+
   const newPost = {
     id: Date.now(), userId: 1,
-    content: (text || '') + location,
+    content,
     image: pendingMediaType === 'photo' ? pendingMediaBase64 : null,
     video: pendingMediaType === 'video' ? pendingMediaBase64 : null,
     emoji: pendingMediaBase64 ? (pendingMediaType === 'video' ? '🎬' : '🖼️') : '📝',
     likes: 0, comments: 0, shares: 0,
     liked: false, time: 'agora', saved: false,
+    mongoId: null, // preenchido após salvar
   };
+
   App.posts.unshift(newPost);
   renderPosts();
   closeModal('newPostModal');
@@ -1373,6 +1786,20 @@ function submitNewPost() {
   const locBtn = document.getElementById('postLocationBtn');
   if (locBtn) { locBtn.textContent = '📍 Local'; locBtn.style.color = ''; }
   showToast('Publicação criada com sucesso! 🎉', 'success');
+
+  // Salvar no MongoDB em background
+  const u = App.currentUser;
+  apiCall('POST', '/posts', {
+    usuarioId:   u.email || u.handle,
+    usuarioNome: u.name,
+    conteudo:    content,
+    imagem:      newPost.image,
+    video:       newPost.video,
+  }).then(data => {
+    if (data?.post?._id) {
+      newPost.mongoId = data.post._id;
+    }
+  });
 }
 
 // =====================
@@ -1477,55 +1904,286 @@ function saveProfile() {
 function switchProfileTab(tab) {
   $$('.profile-tab').forEach(t => t.classList.remove('active'));
   $(`[data-tab="${tab}"]`).classList.add('active');
-  if (tab === 'posts') renderProfileGrid();
-  else {
-    const grid = $('#profileGrid');
-    if (grid) grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1"><div class="empty-state-icon">🔒</div><h3>${tab === 'salvos' ? 'Nenhum post salvo' : 'Em breve!'}</h3></div>`;
+  const grid = $('#profileGrid');
+  if (!grid) return;
+
+  if (tab === 'posts') {
+    renderProfileGrid();
+
+  } else if (tab === 'curtidos') {
+    grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1"><div class="empty-state-icon" style="font-size:30px;margin-bottom:8px">⏳</div><p>Carregando curtidas...</p></div>`;
+    const u = App.currentUser;
+
+    // Posts curtidos localmente (sessão atual)
+    const likedLocal = App.posts.filter(p => p.liked);
+
+    // Posts curtidos no banco (posts com mongoId)
+    apiCall('GET', `/curtidas/${encodeURIComponent(u.email || '')}`)
+      .then(curtidas => {
+        const mongoIds = (curtidas || []).map(c => c.postId);
+        // Merge: posts em memória que foram curtidos
+        const allLiked = App.posts.filter(p => p.liked || (p.mongoId && mongoIds.includes(p.mongoId)));
+
+        if (!allLiked.length) {
+          grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1"><div class="empty-state-icon">❤️</div><h3>Nenhum post curtido ainda</h3><p>Curta publicações para elas aparecerem aqui!</p></div>`;
+          return;
+        }
+        grid.innerHTML = allLiked.map(p => {
+          const preview = p.image
+            ? `<img src="${p.image}" style="width:100%;height:100%;object-fit:cover;border-radius:var(--radius-sm)">`
+            : `<span style="font-size:28px">${p.emoji || '❤️'}</span>`;
+          return `
+            <div class="grid-post" onclick="openComments(${p.id})" style="position:relative">
+              ${preview}
+              <div class="grid-post-overlay">
+                <span>❤️ ${p.likes}</span>
+                <span>💬 ${p.comments}</span>
+              </div>
+            </div>
+          `;
+        }).join('');
+      });
+
+  } else if (tab === 'salvos') {
+    grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1"><div class="empty-state-icon" style="font-size:30px;margin-bottom:8px">⏳</div><p>Carregando salvos...</p></div>`;
+    const u = App.currentUser;
+
+    // Posts salvos localmente
+    const savedLocal = App.posts.filter(p => p.saved);
+
+    apiCall('GET', `/projetos-salvos/${encodeURIComponent(u.email || '')}`)
+      .then(projSalvos => {
+        const items = [...savedLocal];
+
+        if (!items.length && (!projSalvos || !projSalvos.length)) {
+          grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1"><div class="empty-state-icon">🔖</div><h3>Nenhum item salvo ainda</h3><p>Salve posts e projetos para vê-los aqui!</p></div>`;
+          return;
+        }
+
+        let html = '';
+
+        // Posts salvos
+        if (items.length) {
+          html += items.map(p => {
+            const preview = p.image
+              ? `<img src="${p.image}" style="width:100%;height:100%;object-fit:cover;border-radius:var(--radius-sm)">`
+              : `<span style="font-size:28px">${p.emoji || '🔖'}</span>`;
+            return `
+              <div class="grid-post" onclick="openComments(${p.id})">
+                ${preview}
+                <div class="grid-post-overlay"><span>❤️ ${p.likes}</span><span>💬 ${p.comments}</span></div>
+              </div>
+            `;
+          }).join('');
+        }
+
+        // Projetos salvos do banco
+        if (projSalvos?.length) {
+          html += projSalvos.map(ps => `
+            <div class="grid-post" style="flex-direction:column;align-items:flex-start;padding:12px;gap:6px;cursor:default">
+              <span style="font-size:26px">${ps.emoji || '📂'}</span>
+              <div style="font-size:12px;font-weight:700;color:var(--white);line-height:1.3">${ps.titulo}</div>
+              <div style="font-size:11px;color:var(--gray-mid)">${(ps.tags || []).slice(0,2).join(' · ')}</div>
+              <div class="grid-post-overlay" style="font-size:11px"><span>📂 Projeto salvo</span></div>
+            </div>
+          `).join('');
+        }
+
+        grid.innerHTML = html;
+      });
+
+  } else {
+    grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1"><div class="empty-state-icon">🔒</div><h3>Em breve!</h3></div>`;
   }
 }
 
 // =====================
 // NOTIFICATIONS
 // =====================
+// =====================
+// REAL-TIME NOTIFICATIONS
+// =====================
+const REALTIME_NOTIF_POOL = [
+  { type: 'like',    texts: ['curtiu sua publicação', 'curtiu sua foto', 'curtiu seu comentário', 'curtiu seu post recente'] },
+  { type: 'comment', texts: ['comentou: "Que projeto incrível! 🔥"', 'comentou: "Parabéns pelo trabalho!"', 'comentou: "Adorei demais! 😍"', 'comentou: "Muito top isso!"'] },
+  { type: 'follow',  texts: ['começou a te seguir', 'passou a te seguir'] },
+  { type: 'mention', texts: ['mencionou você em uma publicação', 'te marcou em um comentário', 'te marcou em uma foto'] },
+  { type: 'share',   texts: ['compartilhou sua publicação', 'compartilhou seu projeto'] },
+];
+
+let realtimeNotifInterval = null;
+
+function startRealtimeNotifications() {
+  if (realtimeNotifInterval) return;
+  // Fire first one after 8s, then every 15–30s randomly
+  const schedule = () => {
+    const delay = 8000 + Math.random() * 22000;
+    realtimeNotifInterval = setTimeout(() => {
+      spawnRealtimeNotif();
+      schedule();
+    }, delay);
+  };
+  schedule();
+}
+
+function stopRealtimeNotifications() {
+  clearTimeout(realtimeNotifInterval);
+  realtimeNotifInterval = null;
+}
+
+function spawnRealtimeNotif() {
+  // Pick random user and random type
+  const user = FAKE_USERS[Math.floor(Math.random() * FAKE_USERS.length)];
+  const pool = REALTIME_NOTIF_POOL[Math.floor(Math.random() * REALTIME_NOTIF_POOL.length)];
+  const text = pool.texts[Math.floor(Math.random() * pool.texts.length)];
+
+  const newNotif = {
+    id: Date.now(),
+    userId: user.id,
+    type: pool.type,
+    text,
+    time: 'agora',
+    unread: true,
+    fresh: true,
+  };
+
+  App.notifications.unshift(newNotif);
+
+  // Age older "agora" entries
+  App.notifications.forEach((n, i) => {
+    if (i > 0 && n.time === 'agora') n.time = '1 min';
+  });
+
+  updateNotifBadge();
+
+  // Show toast popup with avatar
+  showRealtimeNotifToast(user, text, pool.type);
+
+  // Pulse the bell icon
+  pulseNotifBell();
+
+  // If already on notifications page, re-render live
+  if (App.currentPage === 'notificacoes') {
+    renderNotifications();
+  }
+
+  // Remove fresh flag after animation
+  setTimeout(() => {
+    newNotif.fresh = false;
+    if (App.currentPage === 'notificacoes') renderNotifications();
+  }, 2000);
+}
+
+function showRealtimeNotifToast(user, text, type) {
+  const icon = { like: '❤️', comment: '💬', follow: '👤', mention: '@', share: '🔗' }[type] || '🔔';
+  const avatarSrc = typeof user.avatar === 'string' && user.avatar.startsWith('http')
+    ? user.avatar : `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name)}&background=b80f20&color=fff`;
+
+  const container = $('#toastContainer');
+  const toast = document.createElement('div');
+  toast.style.cssText = `
+    display:flex;align-items:center;gap:12px;
+    background:var(--dark-2);border:1px solid var(--dark-4);
+    border-left:3px solid var(--red);
+    border-radius:var(--radius);padding:12px 16px;
+    box-shadow:0 8px 32px rgba(0,0,0,0.5);
+    cursor:pointer;min-width:280px;max-width:340px;
+    animation:slideIn .3s ease;
+    transition:opacity .3s,transform .3s;
+  `;
+  toast.innerHTML = `
+    <div style="width:40px;height:40px;border-radius:50%;overflow:hidden;flex-shrink:0;position:relative">
+      <img src="${avatarSrc}" style="width:100%;height:100%;object-fit:cover">
+      <div style="position:absolute;bottom:-2px;right:-2px;width:18px;height:18px;border-radius:50%;background:var(--dark-2);display:flex;align-items:center;justify-content:center;font-size:10px">${icon}</div>
+    </div>
+    <div style="flex:1;overflow:hidden">
+      <div style="font-size:13px;font-weight:700;color:var(--white)">${user.name}</div>
+      <div style="font-size:12px;color:var(--gray-light);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${text}</div>
+    </div>
+    <div style="font-size:11px;color:var(--gray-mid);flex-shrink:0">agora</div>
+  `;
+  toast.onclick = () => { navigateTo('notificacoes'); toast.remove(); };
+  container.appendChild(toast);
+  setTimeout(() => {
+    toast.style.opacity = '0';
+    toast.style.transform = 'translateX(20px)';
+    setTimeout(() => toast.remove(), 300);
+  }, 5000);
+}
+
+function pulseNotifBell() {
+  const btn = $('#headerNotifBtn');
+  if (!btn) return;
+  btn.style.animation = 'none';
+  btn.offsetHeight; // reflow
+  btn.style.animation = 'bellPulse .6s ease';
+  setTimeout(() => btn.style.animation = '', 600);
+}
+
 function renderNotifications() {
   const container = $('#notifContainer');
   if (!container) return;
-  container.innerHTML = App.notifications.map(n => {
-    const user = getUserById(n.userId);
-    const icon = { like: '❤️', comment: '💬', follow: '👤', mention: '@' }[n.type] || '🔔';
+
+  // Group by date
+  const fresh = App.notifications.filter(n => n.fresh);
+  const unread = App.notifications.filter(n => n.unread && !n.fresh);
+  const read = App.notifications.filter(n => !n.unread);
+
+  const renderGroup = (items, label) => {
+    if (!items.length) return '';
     return `
-      <div class="notif-item ${n.unread ? 'unread' : ''}" onclick="markNotifRead(${n.id})">
-        <div class="notif-avatar">${user.avatar}</div>
-        <div class="notif-icon-badge">${icon}</div>
-        <div class="notif-content">
-          <div class="notif-text"><strong>${user.name}</strong> ${n.text}</div>
-          <div class="notif-time">${n.time}</div>
-        </div>
-      </div>
+      <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--gray-mid);padding:14px 0 8px">${label}</div>
+      ${items.map(n => {
+        const user = getUserById(n.userId);
+        const icon = { like: '❤️', comment: '💬', follow: '👤', mention: '@', share: '🔗' }[n.type] || '🔔';
+        const avatarSrc = typeof user.avatar === 'string' && user.avatar.startsWith('http')
+          ? user.avatar : `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name)}&background=b80f20&color=fff`;
+        return `
+          <div class="notif-item ${n.unread ? 'unread' : ''} ${n.fresh ? 'notif-fresh' : ''}" onclick="markNotifRead(${n.id})" style="${n.fresh ? 'animation:notifSlideIn .4s ease;' : ''}">
+            <div class="notif-avatar" style="overflow:hidden;padding:0">
+              <img src="${avatarSrc}" style="width:100%;height:100%;object-fit:cover;border-radius:50%"
+                onerror="this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(user.name)}&background=b80f20&color=fff'">
+            </div>
+            <div class="notif-icon-badge">${icon}</div>
+            <div class="notif-content">
+              <div class="notif-text"><strong>${user.name}</strong> ${n.text}</div>
+              <div class="notif-time" style="${n.fresh ? 'color:var(--red);font-weight:600' : ''}">${n.time}</div>
+            </div>
+            ${n.unread ? '<div style="width:8px;height:8px;background:var(--red);border-radius:50%;flex-shrink:0;margin-left:auto"></div>' : ''}
+          </div>
+        `;
+      }).join('')}
     `;
-  }).join('');
+  };
+
+  container.innerHTML =
+    renderGroup(fresh, '🔴 Novo agora') +
+    renderGroup(unread, '● Não lidas') +
+    renderGroup(read, 'Anteriores');
 }
 
 function markNotifRead(id) {
   const n = App.notifications.find(n => n.id === id);
-  if (n) { n.unread = false; }
+  if (n) { n.unread = false; n.fresh = false; }
   renderNotifications();
   updateNotifBadge();
 }
 
 function markAllRead() {
-  App.notifications.forEach(n => n.unread = false);
+  App.notifications.forEach(n => { n.unread = false; n.fresh = false; });
   renderNotifications();
   updateNotifBadge();
-  showToast('Todas as notificações marcadas como lidas!', 'success');
+  showToast('Todas as notificações marcadas como lidas! ✅', 'success');
 }
 
 function updateNotifBadge() {
   const count = App.notifications.filter(n => n.unread).length;
   const badge = $('#notifBadge');
   if (badge) {
-    badge.textContent = count;
+    badge.textContent = count > 9 ? '9+' : count;
     badge.style.display = count > 0 ? 'flex' : 'none';
+    if (count > 0) badge.style.animation = 'badgePop .3s ease';
+    setTimeout(() => { if (badge) badge.style.animation = ''; }, 300);
   }
   const msgCount = App.messages.reduce((acc, m) => acc + m.unread, 0);
   const msgBadge = $('#msgBadge');
@@ -1544,10 +2202,12 @@ function renderMessages() {
   list.innerHTML = App.messages.map(conv => {
     const user = getUserById(conv.userId);
     const isOnline = conv.userId % 2 === 0;
+    const avatarSrc = typeof user.avatar === 'string' && user.avatar.startsWith('http')
+      ? user.avatar : `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name)}&background=b80f20&color=fff`;
     return `
       <div class="message-preview ${App.activeChat === conv.id ? 'active' : ''}" onclick="openChat(${conv.id})">
-        <div class="msg-avatar">
-          ${user.avatar}
+        <div class="msg-avatar" style="overflow:hidden;padding:0;position:relative">
+          <img src="${avatarSrc}" style="width:100%;height:100%;object-fit:cover;border-radius:50%" onerror="this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(user.name)}&background=b80f20&color=fff'">
           ${isOnline ? '<div class="online-dot"></div>' : ''}
         </div>
         <div class="msg-info">
@@ -1571,8 +2231,12 @@ function openChat(convId) {
 
   // Update chat header
   const chatHeader = $('#chatHeader');
+  const chatAvatarSrc = typeof user.avatar === 'string' && user.avatar.startsWith('http')
+    ? user.avatar : `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name)}&background=b80f20&color=fff`;
   chatHeader.innerHTML = `
-    <div class="chat-avatar">${user.avatar}</div>
+    <div class="chat-avatar" style="overflow:hidden;padding:0">
+      <img src="${chatAvatarSrc}" style="width:100%;height:100%;object-fit:cover;border-radius:50%" onerror="this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(user.name)}&background=b80f20&color=fff'">
+    </div>
     <div>
       <div class="chat-user-name">${user.name}</div>
       <div class="chat-status">● Online</div>
@@ -1597,14 +2261,18 @@ function renderChatMessages(conv) {
   container.innerHTML = conv.messages.map(msg => {
     const isMe = msg.from === 1;
     const sender = getUserById(msg.from);
+    const senderAvatar = typeof sender.avatar === 'string' && sender.avatar.startsWith('http')
+      ? sender.avatar : `https://ui-avatars.com/api/?name=${encodeURIComponent(sender.name)}&background=b80f20&color=fff`;
+    const myAvatar = typeof u.avatar === 'string' && u.avatar.startsWith('http')
+      ? u.avatar : `https://ui-avatars.com/api/?name=${encodeURIComponent(u.name)}&background=444&color=fff`;
     return `
       <div class="chat-msg ${isMe ? 'sent' : ''}">
-        ${!isMe ? `<div class="chat-msg-avatar">${sender.avatar}</div>` : ''}
+        ${!isMe ? `<div class="chat-msg-avatar" style="overflow:hidden;padding:0"><img src="${senderAvatar}" style="width:100%;height:100%;object-fit:cover;border-radius:50%"></div>` : ''}
         <div>
           <div class="chat-msg-bubble">${msg.text}</div>
           <div class="chat-msg-time">${msg.time}</div>
         </div>
-        ${isMe ? `<div class="chat-msg-avatar">${u.avatar}</div>` : ''}
+        ${isMe ? `<div class="chat-msg-avatar" style="overflow:hidden;padding:0"><img src="${myAvatar}" style="width:100%;height:100%;object-fit:cover;border-radius:50%"></div>` : ''}
       </div>
     `;
   }).join('');
@@ -1783,12 +2451,16 @@ function openCallModal(type) {
   const conv = App.messages.find(m => m.id === App.activeChat);
   if (!conv) return;
   const user = getUserById(conv.userId);
+  const avatarSrc = typeof user.avatar === 'string' && user.avatar.startsWith('http')
+    ? user.avatar : `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name)}&background=b80f20&color=fff`;
   const isVideo = type === 'video';
   const overlay = document.createElement('div');
   overlay.id = 'callOverlay';
   overlay.style.cssText = 'position:fixed;inset:0;z-index:3000;background:var(--dark);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px';
   overlay.innerHTML = `
-    <div style="font-size:80px">${user.avatar}</div>
+    <div style="width:100px;height:100px;border-radius:50%;overflow:hidden;border:3px solid var(--red)">
+      <img src="${avatarSrc}" style="width:100%;height:100%;object-fit:cover">
+    </div>
     <div style="font-family:var(--font-display);font-size:24px;font-weight:800">${user.name}</div>
     <div style="color:var(--gray-light);font-size:15px">Chamando ${isVideo ? 'por vídeo' : 'por voz'}...</div>
     <div style="display:flex;gap:16px;margin-top:24px">
@@ -1808,11 +2480,15 @@ function openContactInfo() {
   const conv = App.messages.find(m => m.id === App.activeChat);
   if (!conv) return;
   const user = getUserById(conv.userId);
+  const avatarSrc = typeof user.avatar === 'string' && user.avatar.startsWith('http')
+    ? user.avatar : `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name)}&background=b80f20&color=fff`;
   const modal = document.getElementById('genericModal');
   document.getElementById('genericModalTitle').textContent = `👤 ${user.name}`;
   document.getElementById('genericModalBody').innerHTML = `
     <div style="text-align:center;padding:10px 0 20px">
-      <div style="font-size:64px;margin-bottom:10px">${user.avatar}</div>
+      <div style="width:80px;height:80px;border-radius:50%;overflow:hidden;margin:0 auto 10px;border:3px solid var(--red)">
+        <img src="${avatarSrc}" style="width:100%;height:100%;object-fit:cover">
+      </div>
       <div style="font-family:var(--font-display);font-size:20px;font-weight:800">${user.name}</div>
       <div style="color:var(--gray-mid);font-size:14px">${user.handle}</div>
       <div style="margin-top:6px"><span style="background:rgba(232,25,44,0.12);color:var(--red);font-size:12px;padding:3px 10px;border-radius:4px">${user.course}</span></div>

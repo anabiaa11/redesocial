@@ -1065,3 +1065,30 @@ ul { list-style: none; }
   .posts-grid { grid-template-columns: repeat(2, 1fr); }
   .form-row { grid-template-columns: 1fr; }
 }
+/* ========================
+   REALTIME NOTIFICATIONS
+   ======================== */
+@keyframes bellPulse {
+  0%   { transform: scale(1) rotate(0deg); }
+  25%  { transform: scale(1.2) rotate(-15deg); }
+  50%  { transform: scale(1.2) rotate(15deg); }
+  75%  { transform: scale(1.1) rotate(-8deg); }
+  100% { transform: scale(1) rotate(0deg); }
+}
+@keyframes badgePop {
+  0%   { transform: scale(1); }
+  50%  { transform: scale(1.4); }
+  100% { transform: scale(1); }
+}
+@keyframes notifSlideIn {
+  from { opacity: 0; transform: translateX(-16px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+@keyframes slideIn {
+  from { opacity: 0; transform: translateX(40px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+.notif-fresh {
+  border-left: 3px solid var(--red) !important;
+  background: rgba(232,25,44,0.06) !important;
+}
